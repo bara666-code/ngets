@@ -7,292 +7,247 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f1117; --card: #1a1d27; --input: #12151e; --border: #2a2f3d;
-      --text: #e8eaed; --muted: #9aa0b0; --primary: #6366f1; --primary-h: #818cf8;
-      --success: #22c55e; --danger: #ef4444; --radius: 12px;
+      --bg:#0f1117; --card:#1a1d27; --input:#12151e; --border:#2a2f3d;
+      --text:#e8eaed; --muted:#9aa0b0; --primary:#6366f1; --primary-h:#818cf8;
+      --success:#22c55e; --warn:#fbbf24; --radius:12px;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5;
-    }
-    .app { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+    .app{max-width:900px;margin:0 auto;padding:24px 16px 60px}
 
-    #track-screen {
-      display: none; min-height: 100vh; align-items: center; justify-content: center;
-      flex-direction: column; gap: 16px;
-    }
-    #track-screen.active { display: flex; }
-    .spinner {
-      width: 40px; height: 40px; border: 3px solid #2a2f3d; border-top-color: var(--primary);
-      border-radius: 50%; animation: spin .8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #track-msg { color: var(--muted); font-size: .95rem; }
+    #track-screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+    #track-screen.active{display:flex}
+    .spinner{width:40px;height:40px;border:3px solid #2a2f3d;border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #track-msg{color:var(--muted);font-size:.95rem}
 
-    #dashboard { display: none; }
-    #dashboard.active { display: block; }
+    #dashboard{display:none}
+    #dashboard.active{display:block}
 
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.3rem; font-weight: 700; }
-    .logo svg { color: var(--primary); }
-    .header-actions { display: flex; gap: 4px; }
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+    .logo{display:flex;align-items:center;gap:10px;font-size:1.3rem;font-weight:700}
+    .logo svg{color:var(--primary)}
+    .header-actions{display:flex;gap:4px}
 
-    .card {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 22px; margin-bottom: 20px;
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:18px}
+    .card h2{font-size:1.1rem;margin-bottom:4px}
+    .subtitle{color:var(--muted);font-size:.86rem;margin-bottom:14px}
+
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px;font-weight:500}
+    input[type=url],input[type=text],input[type=password]{
+      width:100%;padding:11px 12px;background:var(--input);border:1px solid var(--border);
+      border-radius:8px;color:var(--text);font-size:.92rem;font-family:inherit
     }
-    .card h2 { font-size: 1.15rem; margin-bottom: 4px; }
-    .subtitle { color: var(--muted); font-size: .88rem; margin-bottom: 18px; }
+    input:focus{outline:none;border-color:var(--primary)}
 
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
-    input[type="url"], input[type="text"] {
-      width: 100%; padding: 11px 13px; background: var(--input); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text); font-size: .95rem; font-family: inherit;
-    }
-    input:focus { outline: none; border-color: var(--primary); }
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:none;border-radius:8px;font-size:.88rem;font-weight:500;cursor:pointer;font-family:inherit;transition:.15s}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .btn-primary{background:var(--primary);color:#fff;width:100%;padding:12px}
+    .btn-primary:hover:not(:disabled){background:var(--primary-h)}
+    .btn-secondary{background:var(--input);color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{background:var(--border)}
+    .btn-ghost{background:transparent;color:var(--muted);padding:8px}
+    .btn-ghost:hover{color:var(--text);background:var(--input)}
+    .btn.small{padding:5px 10px;font-size:.78rem}
 
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-      padding: 10px 16px; border: none; border-radius: 8px; font-size: .9rem; font-weight: 500;
-      cursor: pointer; font-family: inherit; transition: .15s;
-    }
-    .btn:disabled { opacity: .6; cursor: not-allowed; }
-    .btn-primary { background: var(--primary); color: #fff; width: 100%; padding: 12px; }
-    .btn-primary:hover:not(:disabled) { background: var(--primary-h); }
-    .btn-secondary { background: var(--input); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--border); }
-    .btn-ghost { background: transparent; color: var(--muted); padding: 8px; }
-    .btn-ghost:hover { color: var(--text); background: var(--input); }
-    .btn.small { padding: 5px 10px; font-size: .8rem; }
+    .setup-box{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:14px;margin-bottom:16px}
+    .setup-box h3{font-size:.95rem;margin-bottom:8px}
+    .setup-box ol{margin:0 0 12px 18px;color:var(--muted);font-size:.82rem}
+    .setup-box li{margin-bottom:4px}
+    .setup-box a{color:var(--primary)}
+    .setup-row{display:flex;gap:8px}
+    .setup-row input{flex:1}
+    .setup-ok{color:var(--success);font-size:.82rem;margin-top:8px;display:none}
+    .setup-ok.show{display:block}
 
-    .result-box {
-      margin-top: 16px; padding: 14px; background: rgba(99,102,241,.1);
-      border: 1px solid rgba(99,102,241,.3); border-radius: 10px; display: none;
-    }
-    .result-box.show { display: block; }
-    .result-label { font-size: .78rem; color: var(--muted); margin-bottom: 6px; }
-    .result-row { display: flex; gap: 8px; }
-    .result-row input { flex: 1; font-family: ui-monospace, monospace; font-size: .82rem; }
-    .result-meta { margin-top: 8px; font-size: .78rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+    .result-box{margin-top:14px;padding:12px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);border-radius:10px;display:none}
+    .result-box.show{display:block}
+    .result-label{font-size:.76rem;color:var(--muted);margin-bottom:6px}
+    .result-row{display:flex;gap:8px}
+    .result-row input{flex:1;font-family:ui-monospace,monospace;font-size:.8rem}
+    .result-meta{margin-top:8px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center}
 
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-    .stat {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 16px 10px; text-align: center;
-    }
-    .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
-    .stat-lbl { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+    .stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 8px;text-align:center}
+    .stat-val{font-size:1.4rem;font-weight:700;color:var(--primary)}
+    .stat-lbl{font-size:.7rem;color:var(--muted);margin-top:2px}
 
-    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .section-head h2 { font-size: 1.1rem; }
-    .badge { background: var(--input); color: var(--muted); font-size: .72rem; padding: 3px 9px; border-radius: 20px; }
+    .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-head h2{font-size:1.05rem}
+    .badge{background:var(--input);color:var(--muted);font-size:.7rem;padding:3px 8px;border-radius:20px}
 
-    .link-item {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 13px 14px; background: var(--input); border: 1px solid var(--border);
-      border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s;
-    }
-    .link-item:hover { border-color: var(--primary); }
-    .link-info { flex: 1; min-width: 0; }
-    .link-name { font-weight: 600; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .link-url { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .link-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .link-clicks {
-      background: rgba(99,102,241,.15); color: var(--primary); font-size: .78rem;
-      font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap;
-    }
+    .link-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:var(--input);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer}
+    .link-item:hover{border-color:var(--primary)}
+    .link-info{flex:1;min-width:0}
+    .link-name{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .link-url{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .link-meta{display:flex;align-items:center;gap:6px;flex-shrink:0}
+    .link-clicks{background:rgba(99,102,241,.15);color:var(--primary);font-size:.76rem;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap}
 
-    .empty { text-align: center; padding: 36px 16px; color: var(--muted); }
-    .empty svg { opacity: .4; margin-bottom: 10px; }
+    .empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:.9rem}
 
-    .modal {
-      position: fixed; inset: 0; z-index: 100; display: none;
-      align-items: center; justify-content: center; padding: 16px;
-    }
-    .modal.show { display: flex; }
-    .modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); }
-    .modal-box {
-      position: relative; background: var(--card); border: 1px solid var(--border);
-      border-radius: 16px; width: 100%; max-width: 560px; max-height: 85vh;
-      overflow: hidden; display: flex; flex-direction: column;
-    }
-    .modal-head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 18px; border-bottom: 1px solid var(--border);
-    }
-    .modal-head h3 { font-size: 1.05rem; }
-    .modal-body { padding: 18px; overflow-y: auto; }
+    .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+    .modal.show{display:flex}
+    .modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+    .modal-box{position:relative;background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+    .modal-head h3{font-size:1rem}
+    .modal-body{padding:16px;overflow-y:auto}
 
-    .info-row { margin-bottom: 12px; }
-    .info-lbl { font-size: .72rem; color: var(--muted); }
-    .info-val { font-size: .9rem; word-break: break-all; }
-    .info-val a { color: var(--primary); text-decoration: none; }
-    .info-val.mono {
-      font-family: ui-monospace, monospace; font-size: .78rem;
-      background: var(--input); padding: 7px 9px; border-radius: 6px; margin-top: 2px;
-    }
+    .info-row{margin-bottom:10px}
+    .info-lbl{font-size:.7rem;color:var(--muted)}
+    .info-val{font-size:.88rem;word-break:break-all}
+    .info-val a{color:var(--primary);text-decoration:none}
+    .info-val.mono{font-family:ui-monospace,monospace;font-size:.76rem;background:var(--input);padding:6px 8px;border-radius:6px;margin-top:2px}
 
-    .mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
-    .mini { background: var(--input); border-radius: 10px; padding: 12px; text-align: center; }
-    .mini-val { display: block; font-size: 1.3rem; font-weight: 700; color: var(--primary); }
-    .mini-lbl { font-size: .72rem; color: var(--muted); }
+    .mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+    .mini{background:var(--input);border-radius:10px;padding:10px;text-align:center}
+    .mini-val{display:block;font-size:1.25rem;font-weight:700;color:var(--primary)}
+    .mini-lbl{font-size:.7rem;color:var(--muted)}
 
-    .visits-title { font-size: .92rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-    .live {
-      width: 8px; height: 8px; background: var(--success); border-radius: 50%;
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .visits-title{font-size:.9rem;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .live{width:8px;height:8px;background:var(--success);border-radius:50%;animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
-    .visit {
-      background: var(--input); border: 1px solid var(--border); border-radius: 8px;
-      padding: 11px 13px; margin-bottom: 7px; font-size: .84rem;
-    }
-    .visit-time { font-weight: 600; margin-bottom: 3px; }
-    .visit-det {
-      color: var(--muted); font-size: .78rem; display: flex; flex-wrap: wrap; gap: 6px 12px;
-    }
+    .visit{background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:.82rem}
+    .visit-time{font-weight:600;margin-bottom:2px}
+    .visit-det{color:var(--muted);font-size:.76rem;display:flex;flex-wrap:wrap;gap:4px 10px}
 
-    .notice {
-      background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3);
-      border-radius: 10px; padding: 12px 14px; font-size: .82rem; color: #fbbf24;
-      margin-bottom: 18px; line-height: 1.45;
-    }
+    .notice{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px;font-size:.8rem;color:var(--warn);margin-bottom:14px;line-height:1.45}
 
-    @media (max-width: 640px) {
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      .link-item { flex-direction: column; align-items: flex-start; }
-      .link-meta { width: 100%; justify-content: space-between; }
-      .result-row { flex-direction: column; }
+    @media(max-width:640px){
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .link-item{flex-direction:column;align-items:flex-start}
+      .link-meta{width:100%;justify-content:space-between}
+      .result-row,.setup-row{flex-direction:column}
     }
   </style>
 </head>
 <body>
 
-  <div id="track-screen">
-    <div class="spinner"></div>
-    <p id="track-msg">Memproses...</p>
+<div id="track-screen">
+  <div class="spinner"></div>
+  <p id="track-msg">Memproses...</p>
+</div>
+
+<div id="dashboard">
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        <span>LinkTracker</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost" id="btn-export" title="Export">⬇</button>
+        <button class="btn btn-ghost" id="btn-clear" title="Hapus semua">🗑</button>
+      </div>
+    </header>
+
+    <!-- SETUP API KEY -->
+    <div class="setup-box" id="setup-box">
+      <h3>⚙️ Setup sekali saja (wajib agar tracking multi-user jalan)</h3>
+      <ol>
+        <li>Buka <a href="https://jsonbin.io/login" target="_blank">jsonbin.io/login</a> → daftar gratis (bisa pakai Google)</li>
+        <li>Setelah masuk, buka <a href="https://jsonbin.io/app/api-keys" target="_blank">API Keys</a></li>
+        <li>Salin <b>Master Key</b> (dimulai dengan <code>$2a$...</code> atau <code>$2b$...</code>)</li>
+        <li>Tempel di bawah → klik Simpan</li>
+      </ol>
+      <div class="setup-row">
+        <input type="password" id="api-key" placeholder="Tempel Master Key JSONBin di sini">
+        <button class="btn btn-secondary" id="btn-save-key">Simpan</button>
+      </div>
+      <div class="setup-ok" id="setup-ok">✓ API Key tersimpan. Sekarang boleh buat link tracking.</div>
+    </div>
+
+    <div class="notice" id="host-notice" style="display:none">
+      File dibuka secara lokal. Disarankan host di <b>https://app.netlify.com/drop</b> atau jalankan <code>python -m http.server 8080</code> lalu buka <code>http://localhost:8080</code>
+    </div>
+
+    <section class="card">
+      <h2>Buat Link Tracking</h2>
+      <p class="subtitle">Setiap orang yang klik link akan tercatat lokasinya di dashboard ini.</p>
+      <form id="form">
+        <div class="form-group">
+          <label>URL Asli</label>
+          <input type="url" id="url" placeholder="https://contoh.com/halaman" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Link (opsional)</label>
+          <input type="text" id="name" placeholder="Promo IG, Kampanye, dll">
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-create">Buat Link Tracking</button>
+      </form>
+      <div class="result-box" id="result">
+        <div class="result-label">Link Tracking (salin & bagikan):</div>
+        <div class="result-row">
+          <input type="text" id="result-link" readonly>
+          <button class="btn btn-secondary" id="btn-copy">Salin</button>
+        </div>
+        <div class="result-meta">
+          <span id="result-status"></span>
+          <button class="btn btn-ghost small" id="btn-test">Test Link</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="s-links">0</div><div class="stat-lbl">Total Link</div></div>
+      <div class="stat"><div class="stat-val" id="s-clicks">0</div><div class="stat-lbl">Total Klik</div></div>
+      <div class="stat"><div class="stat-val" id="s-today">0</div><div class="stat-lbl">Hari Ini</div></div>
+      <div class="stat"><div class="stat-val" id="s-unique">0</div><div class="stat-lbl">Unik</div></div>
+    </div>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>Daftar Link</h2>
+        <span class="badge" id="link-count">0 link</span>
+      </div>
+      <div id="list"></div>
+    </section>
   </div>
+</div>
 
-  <div id="dashboard">
-    <div class="app">
-      <header class="header">
-        <div class="logo">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-          </svg>
-          <span>LinkTracker</span>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-ghost" id="btn-export" title="Export JSON">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-          </button>
-          <button class="btn btn-ghost" id="btn-clear" title="Hapus semua">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      <div class="notice" id="host-notice" style="display:none">
-        ⚠️ File dibuka secara lokal (file://). Tracking multi-user TIDAK akan bekerja.<br>
-        <b>Cara cepat:</b> buka terminal di folder ini → ketik <code style="background:#222;padding:2px 6px;border-radius:4px">python -m http.server 8080</code> → buka <code style="background:#222;padding:2px 6px;border-radius:4px">http://localhost:8080</code><br>
-        Atau drag file ke <b>https://app.netlify.com/drop</b> (gratis, 10 detik).
+<div class="modal" id="modal">
+  <div class="modal-bg" id="modal-bg"></div>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="m-title">Detail</h3>
+      <button class="btn btn-ghost" id="m-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-row"><div class="info-lbl">URL Asli</div><div class="info-val"><a id="m-url" href="#" target="_blank"></a></div></div>
+      <div class="info-row"><div class="info-lbl">Link Tracking</div><div class="info-val mono" id="m-track"></div></div>
+      <div class="info-row"><div class="info-lbl">Dibuat</div><div class="info-val" id="m-created"></div></div>
+      <div class="mini-stats">
+        <div class="mini"><span class="mini-val" id="m-clicks">0</span><span class="mini-lbl">Klik</span></div>
+        <div class="mini"><span class="mini-val" id="m-unique">0</span><span class="mini-lbl">Unik</span></div>
+        <div class="mini"><span class="mini-val" id="m-today">0</span><span class="mini-lbl">Hari Ini</span></div>
       </div>
-
-      <section class="card">
-        <h2>Buat Link Tracking</h2>
-        <p class="subtitle">Masukkan URL → dapatkan link. Setiap orang yang klik akan tercatat lokasinya.</p>
-        <form id="form">
-          <div class="form-group">
-            <label>URL Asli</label>
-            <input type="url" id="url" placeholder="https://contoh.com/halaman" required>
-          </div>
-          <div class="form-group">
-            <label>Nama Link (opsional)</label>
-            <input type="text" id="name" placeholder="Promo IG, Kampanye, dll">
-          </div>
-          <button type="submit" class="btn btn-primary" id="btn-create">Buat Link Tracking</button>
-        </form>
-        <div class="result-box" id="result">
-          <div class="result-label">Link Tracking (salin & bagikan):</div>
-          <div class="result-row">
-            <input type="text" id="result-link" readonly>
-            <button class="btn btn-secondary" id="btn-copy">Salin</button>
-          </div>
-          <div class="result-meta">
-            <span id="result-status"></span>
-            <button class="btn btn-ghost small" id="btn-test">Test Link</button>
-          </div>
-        </div>
-      </section>
-
-      <div class="stats">
-        <div class="stat"><div class="stat-val" id="s-links">0</div><div class="stat-lbl">Total Link</div></div>
-        <div class="stat"><div class="stat-val" id="s-clicks">0</div><div class="stat-lbl">Total Klik</div></div>
-        <div class="stat"><div class="stat-val" id="s-today">0</div><div class="stat-lbl">Hari Ini</div></div>
-        <div class="stat"><div class="stat-val" id="s-unique">0</div><div class="stat-lbl">Unik</div></div>
-      </div>
-
-      <section class="card">
-        <div class="section-head">
-          <h2>Daftar Link</h2>
-          <span class="badge" id="link-count">0 link</span>
-        </div>
-        <div id="list"></div>
-      </section>
+      <div class="visits-title">Riwayat Kunjungan <span class="live"></span></div>
+      <div id="m-visits"></div>
     </div>
   </div>
-
-  <div class="modal" id="modal">
-    <div class="modal-bg" id="modal-bg"></div>
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3 id="m-title">Detail</h3>
-        <button class="btn btn-ghost" id="m-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="info-row"><div class="info-lbl">URL Asli</div><div class="info-val"><a id="m-url" href="#" target="_blank"></a></div></div>
-        <div class="info-row"><div class="info-lbl">Link Tracking</div><div class="info-val mono" id="m-track"></div></div>
-        <div class="info-row"><div class="info-lbl">Dibuat</div><div class="info-val" id="m-created"></div></div>
-        <div class="mini-stats">
-          <div class="mini"><span class="mini-val" id="m-clicks">0</span><span class="mini-lbl">Klik</span></div>
-          <div class="mini"><span class="mini-val" id="m-unique">0</span><span class="mini-lbl">Unik</span></div>
-          <div class="mini"><span class="mini-val" id="m-today">0</span><span class="mini-lbl">Hari Ini</span></div>
-        </div>
-        <div class="visits-title">Riwayat Kunjungan <span class="live"></span></div>
-        <div id="m-visits"></div>
-      </div>
-    </div>
-  </div>
+</div>
 
 <script>
 (function () {
-  const STORAGE = 'lt_v2';
-  const API = 'https://jsonbin-zeta.vercel.app/api/bins';
+  const STORAGE = 'lt_v3';
+  const KEY_STORAGE = 'lt_jsonbin_key';
+  const API = 'https://api.jsonbin.io/v3/b';
 
   const $ = (s) => document.querySelector(s);
   const uid = () => Math.random().toString(36).slice(2, 8);
 
-  function baseUrl() {
-    return location.origin + location.pathname;
-  }
+  function baseUrl() { return location.origin + location.pathname; }
 
   function enc(obj) {
     return btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
-
   function dec(str) {
     try {
       let b = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -305,10 +260,10 @@
     try { return JSON.parse(localStorage.getItem(STORAGE)) || { links: {} }; }
     catch { return { links: {} }; }
   }
+  function save(d) { localStorage.setItem(STORAGE, JSON.stringify(d)); }
 
-  function save(d) {
-    localStorage.setItem(STORAGE, JSON.stringify(d));
-  }
+  function getKey() { return localStorage.getItem(KEY_STORAGE) || ''; }
+  function setKey(k) { localStorage.setItem(KEY_STORAGE, k.trim()); }
 
   function fmt(ts) {
     return new Date(ts).toLocaleString('id-ID', {
@@ -316,121 +271,114 @@
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
   }
-
   function isToday(ts) {
     const a = new Date(ts), b = new Date();
-    return a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+    return a.getDate()===b.getDate() && a.getMonth()===b.getMonth() && a.getFullYear()===b.getFullYear();
   }
-
   function deviceInfo(ua) {
-    if (!ua) return { device: '?', browser: '?', os: '?' };
+    if (!ua) return { device:'?', browser:'?', os:'?' };
     let device = /Mobile|Android|iPhone|iPad/i.test(ua) ? 'Mobile' : 'Desktop';
-    let browser = 'Lainnya';
-    if (ua.includes('Firefox')) browser = 'Firefox';
-    else if (ua.includes('Edg')) browser = 'Edge';
-    else if (ua.includes('Chrome')) browser = 'Chrome';
-    else if (ua.includes('Safari')) browser = 'Safari';
-    let os = 'Lainnya';
-    if (ua.includes('Windows')) os = 'Windows';
-    else if (ua.includes('Mac OS')) os = 'macOS';
-    else if (ua.includes('Android')) os = 'Android';
-    else if (/iPhone|iPad/.test(ua)) os = 'iOS';
-    else if (ua.includes('Linux')) os = 'Linux';
+    let browser = ua.includes('Firefox')?'Firefox':ua.includes('Edg')?'Edge':ua.includes('Chrome')?'Chrome':ua.includes('Safari')?'Safari':'Lainnya';
+    let os = ua.includes('Windows')?'Windows':ua.includes('Mac OS')?'macOS':ua.includes('Android')?'Android':/iPhone|iPad/.test(ua)?'iOS':ua.includes('Linux')?'Linux':'Lainnya';
     return { device, browser, os };
   }
-
   function fingerprint() {
     const s = [navigator.userAgent, navigator.language, screen.width, screen.height, screen.colorDepth, new Date().getTimezoneOffset()].join('|');
     let h = 0;
-    for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
-    return 'fp_' + Math.abs(h).toString(36);
+    for (let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
+    return 'fp_'+Math.abs(h).toString(36);
   }
+  function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
+  // ── JSONBin API (punya CORS yang benar) ──
   async function remoteCreate(data) {
+    const key = getKey();
+    if (!key) throw new Error('API Key belum diset. Isi Master Key di kotak Setup.');
     const r = await fetch(API, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': key,
+        'X-Bin-Private': 'false'
+      },
       body: JSON.stringify(data)
     });
-    if (!r.ok) throw new Error('Gagal buat storage online (' + r.status + ')');
-    const j = await r.json();
-    if (!j.id) throw new Error('Storage online tidak mengembalikan ID');
-    return j.id;
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j && j.message) || ('HTTP ' + r.status));
+    // response: { record, metadata: { id } }
+    const id = (j.metadata && j.metadata.id) || j.id;
+    if (!id) throw new Error('Tidak dapat ID dari JSONBin');
+    return id;
   }
 
   async function remoteGet(id) {
-    const r = await fetch(API + '/' + id);
-    if (!r.ok) throw new Error('Gagal ambil data online (' + r.status + ')');
-    const j = await r.json();
-    // API kadang return data langsung, kadang dibungkus {data: ...}
-    if (j && j.data && typeof j.data === 'object' && !Array.isArray(j.data)) return j.data;
-    return j;
+    const key = getKey();
+    if (!key) throw new Error('no key');
+    const r = await fetch(API + '/' + id + '/latest', {
+      headers: { 'X-Master-Key': key }
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j && j.message) || ('HTTP ' + r.status));
+    return j.record || j;
   }
 
   async function remotePut(id, data) {
+    const key = getKey();
+    if (!key) throw new Error('no key');
     const r = await fetch(API + '/' + id, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': key
+      },
       body: JSON.stringify(data)
     });
-    if (!r.ok) throw new Error('Gagal update data online (' + r.status + ')');
-    const j = await r.json();
-    if (j && j.data && typeof j.data === 'object' && !Array.isArray(j.data)) return j.data;
-    return j;
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j && j.message) || ('HTTP ' + r.status));
+    return j.record || j;
   }
 
+  // Geo IP (tanpa izin)
   async function getGeo() {
     const sources = [
       async () => {
         const r = await fetch('https://ipapi.co/json/');
         if (!r.ok) throw 0;
         const d = await r.json();
-        return { ip: d.ip, city: d.city, region: d.region, country: d.country_name || d.country, postal: d.postal, lat: d.latitude, lon: d.longitude, timezone: d.timezone, isp: d.org };
+        return { ip:d.ip, city:d.city, region:d.region, country:d.country_name||d.country, postal:d.postal, lat:d.latitude, lon:d.longitude, timezone:d.timezone, isp:d.org };
       },
       async () => {
         const r = await fetch('https://ip-api.com/json/?fields=status,country,regionName,city,zip,lat,lon,timezone,isp,org,query');
         if (!r.ok) throw 0;
         const d = await r.json();
-        if (d.status === 'fail') throw 0;
-        return { ip: d.query, city: d.city, region: d.regionName, country: d.country, postal: d.zip, lat: d.lat, lon: d.lon, timezone: d.timezone, isp: d.isp || d.org };
+        if (d.status==='fail') throw 0;
+        return { ip:d.query, city:d.city, region:d.regionName, country:d.country, postal:d.zip, lat:d.lat, lon:d.lon, timezone:d.timezone, isp:d.isp||d.org };
       },
       async () => {
         const r = await fetch('https://get.geojs.io/v1/ip/geo.json');
         if (!r.ok) throw 0;
         const d = await r.json();
-        return { ip: d.ip, city: d.city, region: d.region, country: d.country, postal: null, lat: +d.latitude, lon: +d.longitude, timezone: d.timezone, isp: d.organization_name };
+        return { ip:d.ip, city:d.city, region:d.region, country:d.country, lat:+d.latitude, lon:+d.longitude, timezone:d.timezone, isp:d.organization_name };
       }
     ];
     for (const fn of sources) {
-      try {
-        const g = await fn();
-        if (g && (g.city || g.country || g.ip)) return g;
-      } catch {}
+      try { const g = await fn(); if (g && (g.city||g.country||g.ip)) return g; } catch {}
     }
-    return { ip: null, city: null, region: null, country: null, lat: null, lon: null };
+    return {};
   }
 
   async function createLink(url, name) {
+    if (!getKey()) throw new Error('Isi & simpan Master Key JSONBin dulu (kotak Setup di atas).');
+
     const id = uid();
-    const displayName = name || url.replace(/^https?:\/\//, '').slice(0, 40);
+    const displayName = name || url.replace(/^https?:\/\//,'').slice(0,40);
     const record = { id, name: displayName, originalUrl: url, createdAt: Date.now(), visits: [] };
 
-    // WAJIB online agar semua user yang klik bisa dilacak di dashboard
-    let binId = null;
-    try {
-      binId = await remoteCreate(record);
-    } catch (e) {
-      console.error(e);
-      // Jika file:// biasanya gagal karena CORS — beritahu user
-      if (location.protocol === 'file:') {
-        throw new Error('Buka via http:// (bukan double-click file). Jalankan: python -m http.server 8080  ATAU upload ke Netlify Drop.');
-      }
-      throw new Error('Gagal koneksi storage online. Cek internet lalu coba lagi. Detail: ' + (e.message || e));
-    }
+    const binId = await remoteCreate(record);
 
-    if (!binId) throw new Error('Gagal membuat link online');
-
-    const payload = enc({ i: id, u: url, n: displayName, b: binId });
+    const payload = enc({ i:id, u:url, n:displayName, b:binId, k: getKey() });
+    // Note: we embed a read-path; for write on track we need the key available.
+    // Security note: key in link is visible — for personal use OK. Don't put sensitive data.
     const trackingUrl = baseUrl() + '#/r/' + payload;
 
     const data = load();
@@ -444,10 +392,11 @@
     const url = payload.u;
     const name = payload.n || '';
     const binId = payload.b || null;
+    // Key from payload so ANY visitor can write the visit (needed for multi-user)
+    const keyFromLink = payload.k || getKey();
 
-    // Ambil lokasi (tanpa izin user)
     let geo = {};
-    try { geo = await getGeo(); } catch (e) { console.warn('Geo gagal', e); }
+    try { geo = await getGeo(); } catch {}
 
     const visit = {
       timestamp: Date.now(),
@@ -456,64 +405,58 @@
       referrer: document.referrer || null,
       fingerprint: fingerprint(),
       screen: screen.width + 'x' + screen.height,
-      ip: geo.ip || null,
-      city: geo.city || null,
-      region: geo.region || null,
-      country: geo.country || null,
-      postal: geo.postal || null,
-      lat: geo.lat || null,
-      lon: geo.lon || null,
-      timezone: geo.timezone || null,
-      isp: geo.isp || null
+      ip: geo.ip||null, city: geo.city||null, region: geo.region||null,
+      country: geo.country||null, postal: geo.postal||null,
+      lat: geo.lat||null, lon: geo.lon||null,
+      timezone: geo.timezone||null, isp: geo.isp||null
     };
 
-    // Simpan ke storage ONLINE (ini yang membuat dashboard pembuat link bisa melihat)
-    if (binId) {
+    if (binId && keyFromLink) {
       try {
+        // temporary set key for this request
+        const prev = getKey();
+        if (!prev) setKey(keyFromLink);
         let remote = await remoteGet(binId);
-        if (!remote || typeof remote !== 'object') remote = { id: id, visits: [] };
+        if (!remote || typeof remote !== 'object') remote = { id, visits: [] };
         if (!Array.isArray(remote.visits)) remote.visits = [];
         remote.visits.push(visit);
-        // pastikan metadata tetap ada
         if (!remote.id) remote.id = id;
         if (!remote.originalUrl) remote.originalUrl = url;
         if (!remote.name) remote.name = name;
         await remotePut(binId, remote);
+        if (!prev) localStorage.removeItem(KEY_STORAGE); // don't leave visitor's storage with your key if they didn't have one
+        else setKey(prev);
       } catch (e) {
         console.warn('Remote track gagal:', e);
       }
     }
 
-    // Backup lokal (berguna jika pembuat & pengklik browser yang sama)
     try {
       const data = load();
       if (!data.links[id]) {
         data.links[id] = {
-          id: id,
-          name: name,
-          originalUrl: url,
-          binId: binId,
-          trackingUrl: location.href.split('#')[0] + '#/r/' + enc(payload),
-          createdAt: Date.now(),
-          visits: []
+          id, name, originalUrl:url, binId,
+          trackingUrl: location.href.split('#')[0]+'#/r/'+enc(payload),
+          createdAt: Date.now(), visits: []
         };
       }
       data.links[id].visits.push(visit);
       if (binId) data.links[id].binId = binId;
       save(data);
-    } catch (e) {}
+    } catch {}
 
     return url;
   }
 
   async function syncAll() {
+    if (!getKey()) return;
     const data = load();
     let changed = false;
     await Promise.all(Object.values(data.links).map(async (link) => {
       if (!link.binId) return;
       try {
         const remote = await remoteGet(link.binId);
-        if (remote && Array.isArray(remote.visits) && remote.visits.length !== (link.visits || []).length) {
+        if (remote && Array.isArray(remote.visits) && remote.visits.length !== (link.visits||[]).length) {
           data.links[link.id].visits = remote.visits;
           changed = true;
         }
@@ -524,15 +467,10 @@
 
   function stats() {
     const links = Object.values(load().links);
-    let clicks = 0, today = 0;
-    const uniq = new Set();
-    links.forEach(l => {
-      (l.visits || []).forEach(v => {
-        clicks++;
-        if (isToday(v.timestamp)) today++;
-        if (v.fingerprint) uniq.add(v.fingerprint);
-      });
-    });
+    let clicks=0, today=0; const uniq=new Set();
+    links.forEach(l => (l.visits||[]).forEach(v => {
+      clicks++; if (isToday(v.timestamp)) today++; if (v.fingerprint) uniq.add(v.fingerprint);
+    }));
     $('#s-links').textContent = links.length;
     $('#s-clicks').textContent = clicks;
     $('#s-today').textContent = today;
@@ -540,62 +478,49 @@
   }
 
   function renderList() {
-    const links = Object.values(load().links).sort((a, b) => b.createdAt - a.createdAt);
+    const links = Object.values(load().links).sort((a,b)=>b.createdAt-a.createdAt);
     $('#link-count').textContent = links.length + ' link';
     const box = $('#list');
     if (!links.length) {
-      box.innerHTML = '<div class="empty"><p>Belum ada link. Buat yang pertama di atas.</p></div>';
+      box.innerHTML = '<div class="empty">Belum ada link. Buat yang pertama di atas.</div>';
       return;
     }
     box.innerHTML = links.map(l => {
-      const uniq = new Set((l.visits || []).map(v => v.fingerprint)).size;
-      return '<div class="link-item" data-id="' + l.id + '">' +
-        '<div class="link-info"><div class="link-name">' + esc(l.name) + '</div>' +
-        '<div class="link-url">' + esc(l.originalUrl) + '</div></div>' +
-        '<div class="link-meta"><span class="link-clicks">' + (l.visits || []).length + ' klik · ' + uniq + ' unik</span>' +
-        '<button class="btn btn-ghost small btn-copy-item" data-url="' + esc(l.trackingUrl) + '" title="Salin">Salin</button>' +
-        '<button class="btn btn-ghost small btn-del" data-id="' + l.id + '" title="Hapus">Hapus</button></div></div>';
+      const uniq = new Set((l.visits||[]).map(v=>v.fingerprint)).size;
+      return '<div class="link-item" data-id="'+l.id+'">'+
+        '<div class="link-info"><div class="link-name">'+esc(l.name)+'</div>'+
+        '<div class="link-url">'+esc(l.originalUrl)+'</div></div>'+
+        '<div class="link-meta"><span class="link-clicks">'+(l.visits||[]).length+' klik · '+uniq+' unik</span>'+
+        '<button class="btn btn-ghost small btn-copy-item" data-url="'+esc(l.trackingUrl)+'">Salin</button>'+
+        '<button class="btn btn-ghost small btn-del" data-id="'+l.id+'">Hapus</button></div></div>';
     }).join('');
 
     box.querySelectorAll('.link-item').forEach(el => {
-      el.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-copy-item') || e.target.closest('.btn-del')) return;
+      el.addEventListener('click', e => {
+        if (e.target.closest('.btn-copy-item')||e.target.closest('.btn-del')) return;
         openDetail(el.dataset.id);
       });
     });
     box.querySelectorAll('.btn-copy-item').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         e.stopPropagation();
-        navigator.clipboard.writeText(btn.dataset.url).then(() => {
-          btn.textContent = 'OK';
-          setTimeout(() => { btn.textContent = 'Salin'; }, 1200);
-        });
+        navigator.clipboard.writeText(btn.dataset.url).then(()=>{ btn.textContent='OK'; setTimeout(()=>btn.textContent='Salin',1200); });
       });
     });
     box.querySelectorAll('.btn-del').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         e.stopPropagation();
         if (!confirm('Hapus link ini?')) return;
-        const d = load();
-        delete d.links[btn.dataset.id];
-        save(d);
-        refresh();
+        const d=load(); delete d.links[btn.dataset.id]; save(d); refresh();
       });
     });
-  }
-
-  function esc(s) {
-    const d = document.createElement('div');
-    d.textContent = s || '';
-    return d.innerHTML;
   }
 
   async function openDetail(id) {
     const data = load();
     let link = data.links[id];
     if (!link) return;
-
-    if (link.binId) {
+    if (link.binId && getKey()) {
       try {
         const remote = await remoteGet(link.binId);
         if (remote && Array.isArray(remote.visits)) {
@@ -605,37 +530,27 @@
         }
       } catch {}
     }
-
     $('#m-title').textContent = link.name;
     $('#m-url').textContent = link.originalUrl;
     $('#m-url').href = link.originalUrl;
     $('#m-track').textContent = link.trackingUrl;
     $('#m-created').textContent = fmt(link.createdAt);
-
-    const visits = link.visits || [];
-    const uniq = new Set(visits.map(v => v.fingerprint)).size;
-    const today = visits.filter(v => isToday(v.timestamp)).length;
+    const visits = link.visits||[];
     $('#m-clicks').textContent = visits.length;
-    $('#m-unique').textContent = uniq;
-    $('#m-today').textContent = today;
-
+    $('#m-unique').textContent = new Set(visits.map(v=>v.fingerprint)).size;
+    $('#m-today').textContent = visits.filter(v=>isToday(v.timestamp)).length;
     const box = $('#m-visits');
-    if (!visits.length) {
-      box.innerHTML = '<div class="empty" style="padding:20px">Belum ada kunjungan.</div>';
-    } else {
-      box.innerHTML = [...visits].sort((a, b) => b.timestamp - a.timestamp).map(v => {
+    if (!visits.length) box.innerHTML = '<div class="empty">Belum ada kunjungan.</div>';
+    else {
+      box.innerHTML = [...visits].sort((a,b)=>b.timestamp-a.timestamp).map(v => {
         const di = deviceInfo(v.userAgent);
-        const loc = [v.city, v.region, v.country].filter(Boolean).join(', ') || '—';
-        const coord = (v.lat != null && v.lon != null) ? (Number(v.lat).toFixed(4) + ', ' + Number(v.lon).toFixed(4)) : '';
-        return '<div class="visit"><div class="visit-time">' + fmt(v.timestamp) + '</div><div class="visit-det">' +
-          '<span>📍 ' + esc(loc) + '</span>' +
-          (coord ? '<span>🗺️ ' + coord + '</span>' : '') +
-          (v.isp ? '<span>🏢 ' + esc(v.isp) + '</span>' : '') +
-          (v.timezone ? '<span>🕒 ' + esc(v.timezone) + '</span>' : '') +
-          '<span>📱 ' + di.device + ' · ' + di.os + '</span>' +
-          '<span>🌐 ' + di.browser + '</span>' +
-          '<span>🔗 ' + esc(v.referrer || 'Direct') + '</span>' +
-          (v.ip ? '<span>IP: ' + esc(v.ip) + '</span>' : '') +
+        const loc = [v.city,v.region,v.country].filter(Boolean).join(', ')||'—';
+        const coord = (v.lat!=null&&v.lon!=null)?(Number(v.lat).toFixed(4)+', '+Number(v.lon).toFixed(4)):'';
+        return '<div class="visit"><div class="visit-time">'+fmt(v.timestamp)+'</div><div class="visit-det">'+
+          '<span>📍 '+esc(loc)+'</span>'+(coord?'<span>🗺️ '+coord+'</span>':'')+
+          (v.isp?'<span>🏢 '+esc(v.isp)+'</span>':'')+(v.timezone?'<span>🕒 '+esc(v.timezone)+'</span>':'')+
+          '<span>📱 '+di.device+' · '+di.os+'</span><span>🌐 '+di.browser+'</span>'+
+          '<span>🔗 '+esc(v.referrer||'Direct')+'</span>'+(v.ip?'<span>IP: '+esc(v.ip)+'</span>':'')+
           '</div></div>';
       }).join('');
     }
@@ -648,22 +563,20 @@
     renderList();
   }
 
+  function updateSetupUI() {
+    const k = getKey();
+    if (k) {
+      $('#api-key').value = k;
+      $('#setup-ok').classList.add('show');
+    } else {
+      $('#setup-ok').classList.remove('show');
+    }
+  }
+
   async function init() {
-    const hash = location.hash || '';
+    const hash = location.hash||'';
     let payload = null;
-
-    if (hash.startsWith('#/r/')) {
-      payload = dec(hash.slice(4));
-    }
-
-    if (!payload) {
-      const p = new URLSearchParams(location.search);
-      const oldId = p.get('id');
-      if (oldId) {
-        const link = load().links[oldId];
-        if (link) payload = { i: link.id, u: link.originalUrl, n: link.name, b: link.binId };
-      }
-    }
+    if (hash.startsWith('#/r/')) payload = dec(hash.slice(4));
 
     if (payload && payload.u) {
       $('#track-screen').classList.add('active');
@@ -671,98 +584,69 @@
       try {
         const dest = await trackVisit(payload);
         $('#track-msg').textContent = 'Mengalihkan...';
-        setTimeout(function () { location.replace(dest); }, 250);
-      } catch (e) {
-        $('#track-msg').textContent = 'Mengalihkan...';
-        setTimeout(function () { location.replace(payload.u); }, 250);
+        setTimeout(()=>location.replace(dest), 250);
+      } catch {
+        setTimeout(()=>location.replace(payload.u), 250);
       }
       return;
     }
 
     $('#dashboard').classList.add('active');
+    if (location.protocol==='file:') $('#host-notice').style.display='block';
+    updateSetupUI();
 
-    if (location.protocol === 'file:') {
-      $('#host-notice').style.display = 'block';
-    }
+    $('#btn-save-key').addEventListener('click', () => {
+      const k = $('#api-key').value.trim();
+      if (!k) { alert('Tempel Master Key dulu.'); return; }
+      setKey(k);
+      updateSetupUI();
+      alert('API Key tersimpan!');
+    });
 
-    $('#form').addEventListener('submit', async function (e) {
+    $('#form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const url = $('#url').value.trim();
       const name = $('#name').value.trim();
       if (!url) return;
-
       const btn = $('#btn-create');
-      btn.disabled = true;
-      btn.textContent = 'Membuat...';
+      btn.disabled = true; btn.textContent = 'Membuat...';
       try {
         const link = await createLink(url, name);
         $('#result').classList.add('show');
         $('#result-link').value = link.trackingUrl;
-        $('#result-status').textContent = link.binId ? '● Online · Siap dibagikan' : '○ Lokal (host file agar multi-user)';
-        $('#url').value = '';
-        $('#name').value = '';
+        $('#result-status').textContent = '● Online · Siap dibagikan';
+        $('#result-status').style.color = '#22c55e';
+        $('#url').value=''; $('#name').value='';
         refresh();
       } catch (err) {
-        alert('Gagal: ' + err.message);
+        alert('Gagal: ' + (err.message||err));
       } finally {
-        btn.disabled = false;
-        btn.textContent = 'Buat Link Tracking';
+        btn.disabled=false; btn.textContent='Buat Link Tracking';
       }
     });
 
-    $('#btn-copy').addEventListener('click', function () {
-      navigator.clipboard.writeText($('#result-link').value).then(function () {
-        $('#btn-copy').textContent = 'Tersalin!';
-        setTimeout(function () { $('#btn-copy').textContent = 'Salin'; }, 1500);
+    $('#btn-copy').addEventListener('click', () => {
+      navigator.clipboard.writeText($('#result-link').value).then(()=>{
+        $('#btn-copy').textContent='Tersalin!';
+        setTimeout(()=>$('#btn-copy').textContent='Salin',1500);
       });
     });
+    $('#btn-test').addEventListener('click', ()=>{ const u=$('#result-link').value; if(u) window.open(u,'_blank'); });
+    $('#m-close').addEventListener('click', ()=>$('#modal').classList.remove('show'));
+    $('#modal-bg').addEventListener('click', ()=>$('#modal').classList.remove('show'));
 
-    $('#btn-test').addEventListener('click', function () {
-      const u = $('#result-link').value;
-      if (u) window.open(u, '_blank');
-    });
-
-    $('#m-close').addEventListener('click', function () { $('#modal').classList.remove('show'); });
-    $('#modal-bg').addEventListener('click', function () { $('#modal').classList.remove('show'); });
-
-    $('#btn-export').addEventListener('click', function () {
+    $('#btn-export').addEventListener('click', () => {
       const links = Object.values(load().links);
       if (!links.length) { alert('Belum ada data.'); return; }
-      const out = {
-        exportedAt: new Date().toISOString(),
-        totalLinks: links.length,
-        totalClicks: links.reduce(function (s, l) { return s + (l.visits || []).length; }, 0),
-        links: links.map(function (l) {
-          return {
-            id: l.id, name: l.name, originalUrl: l.originalUrl,
-            trackingUrl: l.trackingUrl, createdAt: new Date(l.createdAt).toISOString(),
-            totalVisits: (l.visits || []).length,
-            visits: (l.visits || []).map(function (v) {
-              return {
-                waktu: new Date(v.timestamp).toISOString(),
-                ip: v.ip, kota: v.city, wilayah: v.region, negara: v.country,
-                latitude: v.lat, longitude: v.lon, isp: v.isp, timezone: v.timezone,
-                perangkat: deviceInfo(v.userAgent).device,
-                os: deviceInfo(v.userAgent).os,
-                browser: deviceInfo(v.userAgent).browser,
-                referrer: v.referrer || 'Direct'
-              };
-            })
-          };
-        })
-      };
-      const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'linktracker-' + new Date().toISOString().slice(0, 10) + '.json';
+      const out = { exportedAt:new Date().toISOString(), links };
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}));
+      a.download='linktracker-'+new Date().toISOString().slice(0,10)+'.json';
       a.click();
     });
-
-    $('#btn-clear').addEventListener('click', function () {
-      if (!confirm('Hapus SEMUA data?')) return;
-      localStorage.removeItem(STORAGE);
-      refresh();
-      $('#result').classList.remove('show');
+    $('#btn-clear').addEventListener('click', ()=>{
+      if(!confirm('Hapus SEMUA data link?')) return;
+      localStorage.removeItem(STORAGE); refresh(); $('#result').classList.remove('show');
     });
 
     refresh();
