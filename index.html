@@ -3,428 +3,196 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Link Tracker Real-Time</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <title>Link Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f1117;
-      --bg-card: #1a1d27;
-      --bg-input: #12151e;
-      --border: #2a2f3d;
-      --text: #e8eaed;
-      --text-muted: #9aa0b0;
-      --primary: #6366f1;
-      --primary-hover: #818cf8;
-      --success: #22c55e;
-      --danger: #ef4444;
-      --radius: 12px;
-      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+      --bg: #0f1117; --card: #1a1d27; --input: #12151e; --border: #2a2f3d;
+      --text: #e8eaed; --muted: #9aa0b0; --primary: #6366f1; --primary-h: #818cf8;
+      --success: #22c55e; --danger: #ef4444; --radius: 12px;
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      line-height: 1.5;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5;
     }
+    .app { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
 
-    .app {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 24px 16px 60px;
+    #track-screen {
+      display: none; min-height: 100vh; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
     }
-
-    /* ===== TRACKING / REDIRECT MODE ===== */
-    .track-screen {
-      display: none;
-      min-height: 100vh;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .track-screen.active { display: flex; }
+    #track-screen.active { display: flex; }
     .spinner {
-      width: 40px; height: 40px;
-      border: 3px solid #2a2f3d;
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      width: 40px; height: 40px; border: 3px solid #2a2f3d; border-top-color: var(--primary);
+      border-radius: 50%; animation: spin .8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .track-msg { color: var(--text-muted); font-size: 0.95rem; }
+    #track-msg { color: var(--muted); font-size: .95rem; }
 
-    /* ===== DASHBOARD ===== */
-    .dashboard { display: none; }
-    .dashboard.active { display: block; }
+    #dashboard { display: none; }
+    #dashboard.active { display: block; }
 
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 32px;
-    }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.35rem;
-      font-weight: 700;
-    }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.3rem; font-weight: 700; }
     .logo svg { color: var(--primary); }
+    .header-actions { display: flex; gap: 4px; }
 
     .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow);
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 22px; margin-bottom: 20px;
     }
-    .create-card h2 { font-size: 1.25rem; margin-bottom: 6px; }
-    .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
+    .card h2 { font-size: 1.15rem; margin-bottom: 4px; }
+    .subtitle { color: var(--muted); font-size: .88rem; margin-bottom: 18px; }
 
-    .form-group { margin-bottom: 16px; }
-    .form-group label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
     input[type="url"], input[type="text"] {
-      width: 100%;
-      padding: 12px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 0.95rem;
-      transition: border-color 0.2s;
+      width: 100%; padding: 11px 13px; background: var(--input); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: .95rem; font-family: inherit;
     }
     input:focus { outline: none; border-color: var(--primary); }
 
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: inherit;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 10px 16px; border: none; border-radius: 8px; font-size: .9rem; font-weight: 500;
+      cursor: pointer; font-family: inherit; transition: .15s;
     }
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      width: 100%;
-      padding: 13px;
-    }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-secondary {
-      background: var(--bg-input);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; width: 100%; padding: 12px; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-h); }
+    .btn-secondary { background: var(--input); color: var(--text); border: 1px solid var(--border); }
     .btn-secondary:hover { background: var(--border); }
-    .btn-ghost {
-      background: transparent;
-      color: var(--text-muted);
-      padding: 8px;
-    }
-    .btn-ghost:hover { color: var(--text); background: var(--bg-input); }
-    .btn.small { padding: 6px 12px; font-size: 0.8rem; }
+    .btn-ghost { background: transparent; color: var(--muted); padding: 8px; }
+    .btn-ghost:hover { color: var(--text); background: var(--input); }
+    .btn.small { padding: 5px 10px; font-size: .8rem; }
 
     .result-box {
-      margin-top: 20px;
-      padding: 16px;
-      background: rgba(99, 102, 241, 0.1);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      border-radius: 10px;
+      margin-top: 16px; padding: 14px; background: rgba(99,102,241,.1);
+      border: 1px solid rgba(99,102,241,.3); border-radius: 10px; display: none;
     }
-    .result-box.hidden { display: none; }
-    .result-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
-    .result-link-wrap { display: flex; gap: 8px; }
-    .result-link-wrap input {
-      flex: 1;
-      font-family: ui-monospace, monospace;
-      font-size: 0.85rem;
-    }
-    .result-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 10px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
+    .result-box.show { display: block; }
+    .result-label { font-size: .78rem; color: var(--muted); margin-bottom: 6px; }
+    .result-row { display: flex; gap: 8px; }
+    .result-row input { flex: 1; font-family: ui-monospace, monospace; font-size: .82rem; }
+    .result-meta { margin-top: 8px; font-size: .78rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+    .stat {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px 10px; text-align: center;
     }
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 14px;
-      text-align: center;
-    }
-    .stat-value {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--primary);
-      line-height: 1.2;
-    }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+    .stat-lbl { font-size: .72rem; color: var(--muted); margin-top: 2px; }
 
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-    .section-header h2 { font-size: 1.15rem; }
-    .badge {
-      background: var(--bg-input);
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 20px;
-    }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-head h2 { font-size: 1.1rem; }
+    .badge { background: var(--input); color: var(--muted); font-size: .72rem; padding: 3px 9px; border-radius: 20px; }
 
-    .links-list { display: flex; flex-direction: column; gap: 10px; }
     .link-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 16px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      transition: border-color 0.2s;
-      cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 13px 14px; background: var(--input); border: 1px solid var(--border);
+      border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s;
     }
     .link-item:hover { border-color: var(--primary); }
     .link-info { flex: 1; min-width: 0; }
-    .link-name {
-      font-weight: 600;
-      font-size: 0.95rem;
-      margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .link-url {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .link-meta {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-left: 12px;
-    }
+    .link-name { font-weight: 600; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .link-url { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .link-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .link-clicks {
-      background: rgba(99, 102, 241, 0.15);
-      color: var(--primary);
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 20px;
-      white-space: nowrap;
+      background: rgba(99,102,241,.15); color: var(--primary); font-size: .78rem;
+      font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap;
     }
-    .link-actions { display: flex; gap: 4px; }
 
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted);
-    }
-    .empty-state svg { margin-bottom: 12px; opacity: 0.5; }
-    .empty-state.hidden { display: none; }
+    .empty { text-align: center; padding: 36px 16px; color: var(--muted); }
+    .empty svg { opacity: .4; margin-bottom: 10px; }
 
-    /* Modal */
     .modal {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+      position: fixed; inset: 0; z-index: 100; display: none;
+      align-items: center; justify-content: center; padding: 16px;
     }
-    .modal.hidden { display: none; }
-    .modal-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(4px);
+    .modal.show { display: flex; }
+    .modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); }
+    .modal-box {
+      position: relative; background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; width: 100%; max-width: 560px; max-height: 85vh;
+      overflow: hidden; display: flex; flex-direction: column;
     }
-    .modal-content {
-      position: relative;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 560px;
-      max-height: 85vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    .modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px; border-bottom: 1px solid var(--border);
     }
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-    .modal-header h3 { font-size: 1.1rem; }
-    .modal-body { padding: 20px; overflow-y: auto; }
+    .modal-head h3 { font-size: 1.05rem; }
+    .modal-body { padding: 18px; overflow-y: auto; }
 
-    .detail-info { margin-bottom: 20px; }
-    .info-row {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 12px;
-    }
-    .info-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
-    .info-value { font-size: 0.9rem; word-break: break-all; }
-    .info-value.link { color: var(--primary); text-decoration: none; }
-    .info-value.link:hover { text-decoration: underline; }
-    .info-value.mono {
-      font-family: ui-monospace, monospace;
-      font-size: 0.8rem;
-      background: var(--bg-input);
-      padding: 8px 10px;
-      border-radius: 6px;
+    .info-row { margin-bottom: 12px; }
+    .info-lbl { font-size: .72rem; color: var(--muted); }
+    .info-val { font-size: .9rem; word-break: break-all; }
+    .info-val a { color: var(--primary); text-decoration: none; }
+    .info-val.mono {
+      font-family: ui-monospace, monospace; font-size: .78rem;
+      background: var(--input); padding: 7px 9px; border-radius: 6px; margin-top: 2px;
     }
 
-    .detail-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 24px;
-    }
-    .mini-stat {
-      background: var(--bg-input);
-      border-radius: 10px;
-      padding: 14px;
-      text-align: center;
-    }
-    .mini-value {
-      display: block;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--primary);
-    }
-    .mini-label { font-size: 0.75rem; color: var(--text-muted); }
+    .mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+    .mini { background: var(--input); border-radius: 10px; padding: 12px; text-align: center; }
+    .mini-val { display: block; font-size: 1.3rem; font-weight: 700; color: var(--primary); }
+    .mini-lbl { font-size: .72rem; color: var(--muted); }
 
-    .visits-title {
-      font-size: 0.95rem;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .live-dot {
-      width: 8px; height: 8px;
-      background: var(--success);
-      border-radius: 50%;
-      display: inline-block;
+    .visits-title { font-size: .92rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .live {
+      width: 8px; height: 8px; background: var(--success); border-radius: 50%;
       animation: pulse 1.5s infinite;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    .visit {
+      background: var(--input); border: 1px solid var(--border); border-radius: 8px;
+      padding: 11px 13px; margin-bottom: 7px; font-size: .84rem;
+    }
+    .visit-time { font-weight: 600; margin-bottom: 3px; }
+    .visit-det {
+      color: var(--muted); font-size: .78rem; display: flex; flex-wrap: wrap; gap: 6px 12px;
     }
 
-    .visits-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 320px;
-      overflow-y: auto;
-    }
-    .visit-item {
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-size: 0.85rem;
-    }
-    .visit-time { font-weight: 600; margin-bottom: 4px; }
-    .visit-details {
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-    }
-    .visit-empty {
-      text-align: center;
-      color: var(--text-muted);
-      padding: 24px;
-      font-size: 0.9rem;
+    .notice {
+      background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3);
+      border-radius: 10px; padding: 12px 14px; font-size: .82rem; color: #fbbf24;
+      margin-bottom: 18px; line-height: 1.45;
     }
 
     @media (max-width: 640px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .link-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-      }
-      .link-meta {
-        margin-left: 0;
-        width: 100%;
-        justify-content: space-between;
-      }
-      .result-link-wrap { flex-direction: column; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .link-item { flex-direction: column; align-items: flex-start; }
+      .link-meta { width: 100%; justify-content: space-between; }
+      .result-row { flex-direction: column; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ========== MODE TRACKING (Redirect) ========== -->
-  <div id="track-screen" class="track-screen">
+  <div id="track-screen">
     <div class="spinner"></div>
-    <p class="track-msg" id="track-msg">Mengalihkan ke tujuan...</p>
+    <p id="track-msg">Memproses...</p>
   </div>
 
-  <!-- ========== MODE DASHBOARD ========== -->
-  <div id="dashboard" class="dashboard">
+  <div id="dashboard">
     <div class="app">
       <header class="header">
         <div class="logo">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
           </svg>
           <span>LinkTracker</span>
         </div>
         <div class="header-actions">
-          <button id="btn-export" class="btn btn-ghost" title="Export data JSON">
+          <button class="btn btn-ghost" id="btn-export" title="Export JSON">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
           </button>
-          <button id="btn-clear" class="btn btn-ghost" title="Hapus semua data">
+          <button class="btn btn-ghost" id="btn-clear" title="Hapus semua">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
             </svg>
@@ -432,817 +200,539 @@
         </div>
       </header>
 
-      <section class="card create-card">
-        <h2>Buat Link Tracking</h2>
-        <p class="subtitle">Masukkan URL asli, lalu dapatkan link tracking unik yang akurat secara real-time.</p>
-        
-        <form id="create-form">
-          <div class="form-group">
-            <label for="original-url">URL Asli</label>
-            <input type="url" id="original-url" placeholder="https://contoh.com/halaman" required>
-          </div>
-          <div class="form-group">
-            <label for="link-name">Nama Link (opsional)</label>
-            <input type="text" id="link-name" placeholder="Kampanye Instagram, Promo, dll">
-          </div>
-          <button type="submit" class="btn btn-primary">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Buat Link Tracking
-          </button>
-        </form>
-
-        <div id="result-box" class="result-box hidden">
-          <div class="result-label">Link Tracking Kamu:</div>
-          <div class="result-link-wrap">
-            <input type="text" id="tracking-link" readonly>
-            <button id="btn-copy" class="btn btn-secondary">Salin</button>
-          </div>
-          <div class="result-meta">
-            <span id="result-id"></span>
-            <button id="btn-open-track" class="btn btn-ghost small">Buka Halaman Tracking</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="stats-grid" id="stats-overview">
-        <div class="stat-card">
-          <div class="stat-value" id="stat-total-links">0</div>
-          <div class="stat-label">Total Link</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-total-clicks">0</div>
-          <div class="stat-label">Total Klik</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-today">0</div>
-          <div class="stat-label">Klik Hari Ini</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-unique">0</div>
-          <div class="stat-label">Pengunjung Unik</div>
-        </div>
-      </section>
+      <div class="notice" id="host-notice" style="display:none">
+        ⚠️ Agar tracking multi-user & lokasi bekerja penuh, host file ini (Netlify Drop / GitHub Pages) atau jalankan: <code style="background:#222;padding:2px 6px;border-radius:4px">python -m http.server 8080</code>
+      </div>
 
       <section class="card">
-        <div class="section-header">
-          <h2>Daftar Link Tracking</h2>
-          <span class="badge" id="link-count">0 link</span>
-        </div>
-        <div id="links-list" class="links-list">
-          <div class="empty-state" id="empty-links">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
-            <p>Belum ada link tracking. Buat yang pertama di atas!</p>
+        <h2>Buat Link Tracking</h2>
+        <p class="subtitle">Masukkan URL → dapatkan link. Setiap orang yang klik akan tercatat lokasinya.</p>
+        <form id="form">
+          <div class="form-group">
+            <label>URL Asli</label>
+            <input type="url" id="url" placeholder="https://contoh.com/halaman" required>
+          </div>
+          <div class="form-group">
+            <label>Nama Link (opsional)</label>
+            <input type="text" id="name" placeholder="Promo IG, Kampanye, dll">
+          </div>
+          <button type="submit" class="btn btn-primary" id="btn-create">Buat Link Tracking</button>
+        </form>
+        <div class="result-box" id="result">
+          <div class="result-label">Link Tracking (salin & bagikan):</div>
+          <div class="result-row">
+            <input type="text" id="result-link" readonly>
+            <button class="btn btn-secondary" id="btn-copy">Salin</button>
+          </div>
+          <div class="result-meta">
+            <span id="result-status"></span>
+            <button class="btn btn-ghost small" id="btn-test">Test Link</button>
           </div>
         </div>
+      </section>
+
+      <div class="stats">
+        <div class="stat"><div class="stat-val" id="s-links">0</div><div class="stat-lbl">Total Link</div></div>
+        <div class="stat"><div class="stat-val" id="s-clicks">0</div><div class="stat-lbl">Total Klik</div></div>
+        <div class="stat"><div class="stat-val" id="s-today">0</div><div class="stat-lbl">Hari Ini</div></div>
+        <div class="stat"><div class="stat-val" id="s-unique">0</div><div class="stat-lbl">Unik</div></div>
+      </div>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>Daftar Link</h2>
+          <span class="badge" id="link-count">0 link</span>
+        </div>
+        <div id="list"></div>
       </section>
     </div>
   </div>
 
-  <!-- Modal Detail -->
-  <div id="detail-modal" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modal-title">Detail Link</h3>
-        <button id="modal-close" class="btn btn-ghost">
+  <div class="modal" id="modal">
+    <div class="modal-bg" id="modal-bg"></div>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="m-title">Detail</h3>
+        <button class="btn btn-ghost" id="m-close">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
       <div class="modal-body">
-        <div class="detail-info">
-          <div class="info-row">
-            <span class="info-label">URL Asli</span>
-            <a id="modal-original" href="#" target="_blank" class="info-value link"></a>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Link Tracking</span>
-            <div class="info-value mono" id="modal-tracking"></div>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Dibuat</span>
-            <span class="info-value" id="modal-created"></span>
-          </div>
+        <div class="info-row"><div class="info-lbl">URL Asli</div><div class="info-val"><a id="m-url" href="#" target="_blank"></a></div></div>
+        <div class="info-row"><div class="info-lbl">Link Tracking</div><div class="info-val mono" id="m-track"></div></div>
+        <div class="info-row"><div class="info-lbl">Dibuat</div><div class="info-val" id="m-created"></div></div>
+        <div class="mini-stats">
+          <div class="mini"><span class="mini-val" id="m-clicks">0</span><span class="mini-lbl">Klik</span></div>
+          <div class="mini"><span class="mini-val" id="m-unique">0</span><span class="mini-lbl">Unik</span></div>
+          <div class="mini"><span class="mini-val" id="m-today">0</span><span class="mini-lbl">Hari Ini</span></div>
         </div>
-
-        <div class="detail-stats">
-          <div class="mini-stat">
-            <span class="mini-value" id="modal-clicks">0</span>
-            <span class="mini-label">Total Klik</span>
-          </div>
-          <div class="mini-stat">
-            <span class="mini-value" id="modal-unique">0</span>
-            <span class="mini-label">Unik</span>
-          </div>
-          <div class="mini-stat">
-            <span class="mini-value" id="modal-today">0</span>
-            <span class="mini-label">Hari Ini</span>
-          </div>
-        </div>
-
-        <h4 class="visits-title">Riwayat Kunjungan <span class="live-dot" title="Update real-time"></span></h4>
-        <div id="visits-list" class="visits-list"></div>
+        <div class="visits-title">Riwayat Kunjungan <span class="live"></span></div>
+        <div id="m-visits"></div>
       </div>
     </div>
   </div>
 
-  <script>
-    const STORAGE_KEY = 'linktracker_data_v1';
-    const REMOTE_API = 'https://jsonbin-zeta.vercel.app/api/bins';
+<script>
+(function () {
+  const STORAGE = 'lt_v2';
+  const API = 'https://jsonbin-zeta.vercel.app/api/bins';
 
-    // ========== Helpers ==========
-    function generateId() {
-      return Math.random().toString(36).substring(2, 8);
-    }
+  const $ = (s) => document.querySelector(s);
+  const uid = () => Math.random().toString(36).slice(2, 8);
 
-    function getBaseUrl() {
-      let path = window.location.pathname;
-      return window.location.origin + path;
-    }
+  function baseUrl() {
+    return location.origin + location.pathname;
+  }
 
-    // Encode / Decode payload (URL aman)
-    function encodePayload(obj) {
+  function enc(obj) {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function dec(str) {
+    try {
+      let b = str.replace(/-/g, '+').replace(/_/g, '/');
+      while (b.length % 4) b += '=';
+      return JSON.parse(decodeURIComponent(escape(atob(b))));
+    } catch { return null; }
+  }
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORAGE)) || { links: {} }; }
+    catch { return { links: {} }; }
+  }
+
+  function save(d) {
+    localStorage.setItem(STORAGE, JSON.stringify(d));
+  }
+
+  function fmt(ts) {
+    return new Date(ts).toLocaleString('id-ID', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+
+  function isToday(ts) {
+    const a = new Date(ts), b = new Date();
+    return a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+  }
+
+  function deviceInfo(ua) {
+    if (!ua) return { device: '?', browser: '?', os: '?' };
+    let device = /Mobile|Android|iPhone|iPad/i.test(ua) ? 'Mobile' : 'Desktop';
+    let browser = 'Lainnya';
+    if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Edg')) browser = 'Edge';
+    else if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    let os = 'Lainnya';
+    if (ua.includes('Windows')) os = 'Windows';
+    else if (ua.includes('Mac OS')) os = 'macOS';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (/iPhone|iPad/.test(ua)) os = 'iOS';
+    else if (ua.includes('Linux')) os = 'Linux';
+    return { device, browser, os };
+  }
+
+  function fingerprint() {
+    const s = [navigator.userAgent, navigator.language, screen.width, screen.height, screen.colorDepth, new Date().getTimezoneOffset()].join('|');
+    let h = 0;
+    for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+    return 'fp_' + Math.abs(h).toString(36);
+  }
+
+  async function remoteCreate(data) {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error('remote create failed');
+    const j = await r.json();
+    return j.id;
+  }
+
+  async function remoteGet(id) {
+    const r = await fetch(API + '/' + id);
+    if (!r.ok) throw new Error('remote get failed');
+    return await r.json();
+  }
+
+  async function remotePut(id, data) {
+    const r = await fetch(API + '/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error('remote put failed');
+    return await r.json();
+  }
+
+  async function getGeo() {
+    const sources = [
+      async () => {
+        const r = await fetch('https://ipapi.co/json/');
+        if (!r.ok) throw 0;
+        const d = await r.json();
+        return { ip: d.ip, city: d.city, region: d.region, country: d.country_name || d.country, postal: d.postal, lat: d.latitude, lon: d.longitude, timezone: d.timezone, isp: d.org };
+      },
+      async () => {
+        const r = await fetch('https://ip-api.com/json/?fields=status,country,regionName,city,zip,lat,lon,timezone,isp,org,query');
+        if (!r.ok) throw 0;
+        const d = await r.json();
+        if (d.status === 'fail') throw 0;
+        return { ip: d.query, city: d.city, region: d.regionName, country: d.country, postal: d.zip, lat: d.lat, lon: d.lon, timezone: d.timezone, isp: d.isp || d.org };
+      },
+      async () => {
+        const r = await fetch('https://get.geojs.io/v1/ip/geo.json');
+        if (!r.ok) throw 0;
+        const d = await r.json();
+        return { ip: d.ip, city: d.city, region: d.region, country: d.country, postal: null, lat: +d.latitude, lon: +d.longitude, timezone: d.timezone, isp: d.organization_name };
+      }
+    ];
+    for (const fn of sources) {
       try {
-        const json = JSON.stringify(obj);
-        return btoa(unescape(encodeURIComponent(json)))
-          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      } catch {
-        return '';
-      }
+        const g = await fn();
+        if (g && (g.city || g.country || g.ip)) return g;
+      } catch {}
+    }
+    return { ip: null, city: null, region: null, country: null, lat: null, lon: null };
+  }
+
+  async function createLink(url, name) {
+    const id = uid();
+    const displayName = name || url.replace(/^https?:\/\//, '').slice(0, 40);
+    const record = { id, name: displayName, originalUrl: url, createdAt: Date.now(), visits: [] };
+
+    let binId = null;
+    try {
+      binId = await remoteCreate(record);
+    } catch (e) {
+      console.warn('Remote gagal, mode lokal:', e);
     }
 
-    function decodePayload(str) {
+    const payload = enc({ i: id, u: url, n: displayName, b: binId });
+    const trackingUrl = baseUrl() + '#/r/' + payload;
+
+    const data = load();
+    data.links[id] = { ...record, binId, trackingUrl };
+    save(data);
+    return data.links[id];
+  }
+
+  async function trackVisit(payload) {
+    const id = payload.i || uid();
+    const url = payload.u;
+    const name = payload.n || '';
+    const binId = payload.b || null;
+
+    const geo = await getGeo();
+    const visit = {
+      timestamp: Date.now(),
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      referrer: document.referrer || null,
+      fingerprint: fingerprint(),
+      screen: screen.width + 'x' + screen.height,
+      ...geo
+    };
+
+    if (binId) {
       try {
-        let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
-        while (b64.length % 4) b64 += '=';
-        const json = decodeURIComponent(escape(atob(b64)));
-        return JSON.parse(json);
-      } catch {
-        return null;
-      }
-    }
-
-    function loadData() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : { links: {} };
-      } catch {
-        return { links: {} };
-      }
-    }
-
-    function saveData(data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      window.dispatchEvent(new CustomEvent('tracker-update'));
-    }
-
-    // ========== Remote Storage (agar tracking multi-user bekerja) ==========
-    async function remoteCreate(linkData) {
-      const res = await fetch(REMOTE_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(linkData)
-      });
-      if (!res.ok) throw new Error('Gagal buat remote storage');
-      const json = await res.json();
-      return json.id; // bin id
-    }
-
-    async function remoteGet(binId) {
-      const res = await fetch(`${REMOTE_API}/${binId}`);
-      if (!res.ok) throw new Error('Gagal ambil data remote');
-      return await res.json();
-    }
-
-    async function remoteUpdate(binId, linkData) {
-      const res = await fetch(`${REMOTE_API}/${binId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(linkData)
-      });
-      if (!res.ok) throw new Error('Gagal update remote');
-      return await res.json();
-    }
-
-    function formatDate(ts) {
-      return new Date(ts).toLocaleString('id-ID', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-    }
-
-    function isToday(ts) {
-      const d = new Date(ts);
-      const now = new Date();
-      return d.getDate() === now.getDate() &&
-             d.getMonth() === now.getMonth() &&
-             d.getFullYear() === now.getFullYear();
-    }
-
-    function getDeviceInfo(ua) {
-      if (!ua) return { device: 'Unknown', browser: 'Unknown', os: 'Unknown' };
-      let device = 'Desktop';
-      if (/Mobile|Android|iPhone|iPad/i.test(ua)) device = 'Mobile';
-      else if (/Tablet|iPad/i.test(ua)) device = 'Tablet';
-
-      let browser = 'Unknown';
-      if (ua.includes('Firefox')) browser = 'Firefox';
-      else if (ua.includes('Edg')) browser = 'Edge';
-      else if (ua.includes('Chrome')) browser = 'Chrome';
-      else if (ua.includes('Safari')) browser = 'Safari';
-      else if (ua.includes('Opera') || ua.includes('OPR')) browser = 'Opera';
-
-      let os = 'Unknown';
-      if (ua.includes('Windows')) os = 'Windows';
-      else if (ua.includes('Mac OS')) os = 'macOS';
-      else if (ua.includes('Android')) os = 'Android';
-      else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
-      else if (ua.includes('Linux')) os = 'Linux';
-
-      return { device, browser, os };
-    }
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
-    function getFingerprint() {
-      const nav = window.navigator;
-      const screen = window.screen;
-      const data = [
-        nav.userAgent, nav.language,
-        screen.width, screen.height, screen.colorDepth,
-        new Date().getTimezoneOffset()
-      ].join('|');
-      let hash = 0;
-      for (let i = 0; i < data.length; i++) {
-        hash = ((hash << 5) - hash) + data.charCodeAt(i);
-        hash |= 0;
-      }
-      return 'fp_' + Math.abs(hash).toString(36);
-    }
-
-    // IP-based geolocation saja (tanpa izin / popup dari user)
-    async function getGeoInfo() {
-      const sources = [
-        async () => {
-          const res = await fetch('https://ipapi.co/json/');
-          if (!res.ok) throw new Error('fail');
-          const d = await res.json();
-          return {
-            ip: d.ip,
-            city: d.city,
-            region: d.region,
-            country: d.country_name || d.country,
-            countryCode: d.country_code,
-            postal: d.postal,
-            lat: d.latitude,
-            lon: d.longitude,
-            timezone: d.timezone,
-            isp: d.org,
-            asn: d.asn,
-            locationSource: 'ip'
-          };
-        },
-        async () => {
-          const res = await fetch('https://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,query');
-          if (!res.ok) throw new Error('fail');
-          const d = await res.json();
-          if (d.status === 'fail') throw new Error('fail');
-          return {
-            ip: d.query,
-            city: d.city,
-            region: d.regionName,
-            country: d.country,
-            countryCode: d.countryCode,
-            postal: d.zip,
-            lat: d.lat,
-            lon: d.lon,
-            timezone: d.timezone,
-            isp: d.isp || d.org,
-            asn: d.as,
-            locationSource: 'ip'
-          };
-        },
-        async () => {
-          const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
-          if (!res.ok) throw new Error('fail');
-          const d = await res.json();
-          return {
-            ip: d.ip,
-            city: d.city,
-            region: d.region,
-            country: d.country,
-            countryCode: d.country_code,
-            postal: null,
-            lat: parseFloat(d.latitude),
-            lon: parseFloat(d.longitude),
-            timezone: d.timezone,
-            isp: d.organization_name,
-            asn: d.asn,
-            locationSource: 'ip'
-          };
-        }
-      ];
-
-      for (const src of sources) {
-        try {
-          const data = await src();
-          if (data && (data.city || data.country || data.ip)) return data;
-        } catch (e) { /* coba sumber berikutnya */ }
-      }
-      return {
-        ip: null, city: null, region: null, country: null,
-        lat: null, lon: null, locationSource: 'ip'
-      };
-    }
-
-    // ========== Core ==========
-    async function createLink(originalUrl, name = '') {
-      const data = loadData();
-      const id = generateId();
-      const displayName = name || originalUrl.replace(/^https?:\/\//, '').slice(0, 40);
-
-      const linkRecord = {
-        id,
-        name: displayName,
-        originalUrl,
-        createdAt: Date.now(),
-        visits: []
-      };
-
-      // Simpan ke remote agar bisa dilacak dari browser/perangkat mana pun
-      let binId = null;
-      try {
-        binId = await remoteCreate(linkRecord);
+        let remote = await remoteGet(binId);
+        if (!Array.isArray(remote.visits)) remote.visits = [];
+        remote.visits.push(visit);
+        await remotePut(binId, remote);
       } catch (e) {
-        console.warn('Remote create gagal, fallback lokal saja:', e);
+        console.warn('Remote track gagal:', e);
       }
-
-      // Payload berisi id + url + binId (redirect selalu jalan)
-      const payload = encodePayload({
-        i: id,
-        u: originalUrl,
-        n: displayName,
-        b: binId
-      });
-
-      const trackingUrl = `${getBaseUrl()}#/r/${payload}`;
-
-      data.links[id] = {
-        ...linkRecord,
-        binId,
-        trackingUrl
-      };
-      saveData(data);
-      return data.links[id];
     }
 
-    function getLink(id) {
-      return loadData().links[id] || null;
-    }
-
-    function deleteLink(id) {
-      const data = loadData();
-      delete data.links[id];
-      saveData(data);
-    }
-
-    function getAllLinks() {
-      return Object.values(loadData().links).sort((a, b) => b.createdAt - a.createdAt);
-    }
-
-    function getStats() {
-      const links = getAllLinks();
-      let totalClicks = 0, todayClicks = 0;
-      const uniqueSet = new Set();
-      links.forEach(link => {
-        totalClicks += link.visits.length;
-        link.visits.forEach(v => {
-          if (isToday(v.timestamp)) todayClicks++;
-          if (v.fingerprint) uniqueSet.add(v.fingerprint);
-        });
-      });
-      return {
-        totalLinks: links.length,
-        totalClicks,
-        todayClicks,
-        uniqueVisitors: uniqueSet.size
-      };
-    }
-
-    // ========== UI ==========
-    function renderStats() {
-      const s = getStats();
-      document.getElementById('stat-total-links').textContent = s.totalLinks;
-      document.getElementById('stat-total-clicks').textContent = s.totalClicks;
-      document.getElementById('stat-today').textContent = s.todayClicks;
-      document.getElementById('stat-unique').textContent = s.uniqueVisitors;
-    }
-
-    function renderLinksList() {
-      const list = document.getElementById('links-list');
-      const empty = document.getElementById('empty-links');
-      const links = getAllLinks();
-      document.getElementById('link-count').textContent = `${links.length} link`;
-
-      list.querySelectorAll('.link-item').forEach(el => el.remove());
-
-      if (links.length === 0) {
-        empty.classList.remove('hidden');
-        return;
-      }
-      empty.classList.add('hidden');
-
-      links.forEach(link => {
-        const item = document.createElement('div');
-        item.className = 'link-item';
-        item.dataset.id = link.id;
-        const uniqueCount = new Set(link.visits.map(v => v.fingerprint)).size;
-
-        item.innerHTML = `
-          <div class="link-info">
-            <div class="link-name">${escapeHtml(link.name)}</div>
-            <div class="link-url">${escapeHtml(link.originalUrl)}</div>
-          </div>
-          <div class="link-meta">
-            <span class="link-clicks">${link.visits.length} klik · ${uniqueCount} unik</span>
-            <div class="link-actions">
-              <button class="btn btn-ghost small btn-copy-link" title="Salin link" data-url="${escapeHtml(link.trackingUrl)}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                </svg>
-              </button>
-              <button class="btn btn-ghost small btn-delete" title="Hapus" data-id="${link.id}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        `;
-
-        item.addEventListener('click', (e) => {
-          if (e.target.closest('.btn-copy-link') || e.target.closest('.btn-delete')) return;
-          openDetail(link.id);
-        });
-        list.appendChild(item);
-      });
-
-      list.querySelectorAll('.btn-copy-link').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          navigator.clipboard.writeText(btn.dataset.url).then(() => {
-            btn.innerHTML = '✓';
-            setTimeout(() => {
-              btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-            }, 1500);
-          });
-        });
-      });
-
-      list.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (confirm('Hapus link tracking ini beserta semua data kunjungannya?')) {
-            deleteLink(btn.dataset.id);
-            refreshUI();
-          }
-        });
-      });
-    }
-
-    async function openDetail(id) {
-      // Sync dulu dari remote biar data terbaru
-      const data = loadData();
-      const linkRef = data.links[id];
-      if (linkRef && linkRef.binId) {
-        try {
-          const remote = await remoteGet(linkRef.binId);
-          if (remote && Array.isArray(remote.visits)) {
-            data.links[id].visits = remote.visits;
-            saveData(data);
-          }
-        } catch (e) {}
-      }
-
-      const link = getLink(id);
-      if (!link) return;
-
-      document.getElementById('modal-title').textContent = link.name;
-      document.getElementById('modal-original').textContent = link.originalUrl;
-      document.getElementById('modal-original').href = link.originalUrl;
-      document.getElementById('modal-tracking').textContent = link.trackingUrl;
-      document.getElementById('modal-created').textContent = formatDate(link.createdAt);
-
-      const unique = new Set(link.visits.map(v => v.fingerprint)).size;
-      const today = link.visits.filter(v => isToday(v.timestamp)).length;
-      document.getElementById('modal-clicks').textContent = link.visits.length;
-      document.getElementById('modal-unique').textContent = unique;
-      document.getElementById('modal-today').textContent = today;
-
-      const visitsList = document.getElementById('visits-list');
-      visitsList.innerHTML = '';
-
-      if (link.visits.length === 0) {
-        visitsList.innerHTML = '<div class="visit-empty">Belum ada kunjungan. Bagikan link tracking-mu!</div>';
-      } else {
-        [...link.visits].sort((a, b) => b.timestamp - a.timestamp).forEach(v => {
-          const info = getDeviceInfo(v.userAgent);
-
-          // Format lokasi lebih detail
-          let locationText = '—';
-          if (v.city || v.region || v.country) {
-            locationText = [v.city, v.region, v.country].filter(Boolean).join(', ');
-          }
-          if (v.postal) locationText += ` (${v.postal})`;
-
-          // Koordinat
-          let coordText = '';
-          if (v.lat != null && v.lon != null) {
-            coordText = `${Number(v.lat).toFixed(5)}, ${Number(v.lon).toFixed(5)}`;
-          }
-
-          const el = document.createElement('div');
-          el.className = 'visit-item';
-          el.innerHTML = `
-            <div class="visit-time">${formatDate(v.timestamp)}</div>
-            <div class="visit-details">
-              <span>📍 ${locationText}</span>
-              ${coordText ? `<span>🗺️ ${coordText}</span>` : ''}
-              ${v.isp ? `<span>🏢 ${v.isp}</span>` : ''}
-              ${v.timezone ? `<span>🕒 ${v.timezone}</span>` : ''}
-              <span>📱 ${info.device} · ${info.os}</span>
-              <span>🌐 ${info.browser}</span>
-              <span>🔗 ${v.referrer || 'Direct'}</span>
-              ${v.ip ? `<span>IP: ${v.ip}</span>` : ''}
-            </div>
-          `;
-          visitsList.appendChild(el);
-        });
-      }
-      document.getElementById('detail-modal').classList.remove('hidden');
-    }
-
-    function closeDetail() {
-      document.getElementById('detail-modal').classList.add('hidden');
-    }
-
-    async function syncFromRemote() {
-      const data = loadData();
-      let changed = false;
-      const links = Object.values(data.links);
-
-      await Promise.all(links.map(async (link) => {
-        if (!link.binId) return;
-        try {
-          const remote = await remoteGet(link.binId);
-          if (remote && Array.isArray(remote.visits)) {
-            // Gabungkan visits (remote adalah sumber utama)
-            if (remote.visits.length !== link.visits.length) {
-              data.links[link.id].visits = remote.visits;
-              changed = true;
-            }
-          }
-        } catch (e) {
-          // diam saja jika gagal sync
-        }
-      }));
-
-      if (changed) saveData(data);
-    }
-
-    async function refreshUI() {
-      await syncFromRemote();
-      renderStats();
-      renderLinksList();
-    }
-
-    // ========== Tracking Mode ==========
-    // payload = { i: id, u: originalUrl, n: name, b: binId }
-    async function runTrackingMode(payload) {
-      document.getElementById('track-screen').classList.add('active');
-      document.getElementById('dashboard').classList.remove('active');
-
-      if (!payload || !payload.u) {
-        document.getElementById('track-msg').textContent = 'Link tidak valid.';
-        return;
-      }
-
-      const id = payload.i || generateId();
-      const originalUrl = payload.u;
-      const name = payload.n || originalUrl.replace(/^https?:\/\//, '').slice(0, 40);
-      const binId = payload.b || null;
-
-      try {
-        document.getElementById('track-msg').textContent = 'Mencatat kunjungan...';
-        const geo = await getGeoInfo();
-        const visit = {
-          timestamp: Date.now(),
-          userAgent: navigator.userAgent,
-          language: navigator.language,
-          referrer: document.referrer || null,
-          fingerprint: getFingerprint(),
-          screen: `${screen.width}x${screen.height}`,
-          ...geo
+    try {
+      const data = load();
+      if (!data.links[id]) {
+        data.links[id] = {
+          id, name, originalUrl: url, binId,
+          trackingUrl: location.href.split('#')[0] + '#/r/' + enc(payload),
+          createdAt: Date.now(), visits: []
         };
+      }
+      data.links[id].visits.push(visit);
+      if (binId) data.links[id].binId = binId;
+      save(data);
+    } catch {}
 
-        // 1) Update remote (utama) — agar pembuat link melihat klik dari mana saja
-        if (binId) {
-          try {
-            let remote = await remoteGet(binId);
-            if (!remote.visits) remote.visits = [];
-            remote.visits.push(visit);
-            await remoteUpdate(binId, remote);
-          } catch (e) {
-            console.warn('Remote track gagal:', e);
-          }
-        }
+    return url;
+  }
 
-        // 2) Update local juga (jika browser yang sama)
-        try {
-          const data = loadData();
-          if (!data.links[id]) {
-            data.links[id] = {
-              id, name, originalUrl, binId,
-              trackingUrl: window.location.href.split('#')[0] + '#/r/' + encodePayload(payload),
-              createdAt: Date.now(),
-              visits: []
-            };
-          }
-          data.links[id].visits.push(visit);
-          if (binId) data.links[id].binId = binId;
-          saveData(data);
-        } catch (e) {
-          console.warn('Local track gagal:', e);
+  async function syncAll() {
+    const data = load();
+    let changed = false;
+    await Promise.all(Object.values(data.links).map(async (link) => {
+      if (!link.binId) return;
+      try {
+        const remote = await remoteGet(link.binId);
+        if (remote && Array.isArray(remote.visits) && remote.visits.length !== (link.visits || []).length) {
+          data.links[link.id].visits = remote.visits;
+          changed = true;
         }
+      } catch {}
+    }));
+    if (changed) save(data);
+  }
+
+  function stats() {
+    const links = Object.values(load().links);
+    let clicks = 0, today = 0;
+    const uniq = new Set();
+    links.forEach(l => {
+      (l.visits || []).forEach(v => {
+        clicks++;
+        if (isToday(v.timestamp)) today++;
+        if (v.fingerprint) uniq.add(v.fingerprint);
+      });
+    });
+    $('#s-links').textContent = links.length;
+    $('#s-clicks').textContent = clicks;
+    $('#s-today').textContent = today;
+    $('#s-unique').textContent = uniq.size;
+  }
+
+  function renderList() {
+    const links = Object.values(load().links).sort((a, b) => b.createdAt - a.createdAt);
+    $('#link-count').textContent = links.length + ' link';
+    const box = $('#list');
+    if (!links.length) {
+      box.innerHTML = '<div class="empty"><p>Belum ada link. Buat yang pertama di atas.</p></div>';
+      return;
+    }
+    box.innerHTML = links.map(l => {
+      const uniq = new Set((l.visits || []).map(v => v.fingerprint)).size;
+      return '<div class="link-item" data-id="' + l.id + '">' +
+        '<div class="link-info"><div class="link-name">' + esc(l.name) + '</div>' +
+        '<div class="link-url">' + esc(l.originalUrl) + '</div></div>' +
+        '<div class="link-meta"><span class="link-clicks">' + (l.visits || []).length + ' klik · ' + uniq + ' unik</span>' +
+        '<button class="btn btn-ghost small btn-copy-item" data-url="' + esc(l.trackingUrl) + '" title="Salin">Salin</button>' +
+        '<button class="btn btn-ghost small btn-del" data-id="' + l.id + '" title="Hapus">Hapus</button></div></div>';
+    }).join('');
+
+    box.querySelectorAll('.link-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-copy-item') || e.target.closest('.btn-del')) return;
+        openDetail(el.dataset.id);
+      });
+    });
+    box.querySelectorAll('.btn-copy-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(btn.dataset.url).then(() => {
+          btn.textContent = 'OK';
+          setTimeout(() => { btn.textContent = 'Salin'; }, 1200);
+        });
+      });
+    });
+    box.querySelectorAll('.btn-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!confirm('Hapus link ini?')) return;
+        const d = load();
+        delete d.links[btn.dataset.id];
+        save(d);
+        refresh();
+      });
+    });
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  async function openDetail(id) {
+    const data = load();
+    let link = data.links[id];
+    if (!link) return;
+
+    if (link.binId) {
+      try {
+        const remote = await remoteGet(link.binId);
+        if (remote && Array.isArray(remote.visits)) {
+          link.visits = remote.visits;
+          data.links[id].visits = remote.visits;
+          save(data);
+        }
+      } catch {}
+    }
+
+    $('#m-title').textContent = link.name;
+    $('#m-url').textContent = link.originalUrl;
+    $('#m-url').href = link.originalUrl;
+    $('#m-track').textContent = link.trackingUrl;
+    $('#m-created').textContent = fmt(link.createdAt);
+
+    const visits = link.visits || [];
+    const uniq = new Set(visits.map(v => v.fingerprint)).size;
+    const today = visits.filter(v => isToday(v.timestamp)).length;
+    $('#m-clicks').textContent = visits.length;
+    $('#m-unique').textContent = uniq;
+    $('#m-today').textContent = today;
+
+    const box = $('#m-visits');
+    if (!visits.length) {
+      box.innerHTML = '<div class="empty" style="padding:20px">Belum ada kunjungan.</div>';
+    } else {
+      box.innerHTML = [...visits].sort((a, b) => b.timestamp - a.timestamp).map(v => {
+        const di = deviceInfo(v.userAgent);
+        const loc = [v.city, v.region, v.country].filter(Boolean).join(', ') || '—';
+        const coord = (v.lat != null && v.lon != null) ? (Number(v.lat).toFixed(4) + ', ' + Number(v.lon).toFixed(4)) : '';
+        return '<div class="visit"><div class="visit-time">' + fmt(v.timestamp) + '</div><div class="visit-det">' +
+          '<span>📍 ' + esc(loc) + '</span>' +
+          (coord ? '<span>🗺️ ' + coord + '</span>' : '') +
+          (v.isp ? '<span>🏢 ' + esc(v.isp) + '</span>' : '') +
+          (v.timezone ? '<span>🕒 ' + esc(v.timezone) + '</span>' : '') +
+          '<span>📱 ' + di.device + ' · ' + di.os + '</span>' +
+          '<span>🌐 ' + di.browser + '</span>' +
+          '<span>🔗 ' + esc(v.referrer || 'Direct') + '</span>' +
+          (v.ip ? '<span>IP: ' + esc(v.ip) + '</span>' : '') +
+          '</div></div>';
+      }).join('');
+    }
+    $('#modal').classList.add('show');
+  }
+
+  async function refresh() {
+    await syncAll();
+    stats();
+    renderList();
+  }
+
+  async function init() {
+    const hash = location.hash || '';
+    let payload = null;
+
+    if (hash.startsWith('#/r/')) {
+      payload = dec(hash.slice(4));
+    }
+
+    if (!payload) {
+      const p = new URLSearchParams(location.search);
+      const oldId = p.get('id');
+      if (oldId) {
+        const link = load().links[oldId];
+        if (link) payload = { i: link.id, u: link.originalUrl, n: link.name, b: link.binId };
+      }
+    }
+
+    if (payload && payload.u) {
+      $('#track-screen').classList.add('active');
+      $('#track-msg').textContent = 'Mencatat lokasi...';
+      try {
+        const dest = await trackVisit(payload);
+        $('#track-msg').textContent = 'Mengalihkan...';
+        setTimeout(function () { location.replace(dest); }, 250);
       } catch (e) {
-        console.warn('Track error:', e);
+        $('#track-msg').textContent = 'Mengalihkan...';
+        setTimeout(function () { location.replace(payload.u); }, 250);
       }
-
-      // Redirect selalu berhasil
-      document.getElementById('track-msg').textContent = 'Mengalihkan...';
-      setTimeout(() => {
-        window.location.replace(originalUrl);
-      }, 300);
+      return;
     }
 
-    // ========== Init ==========
-    function init() {
-      // Cek format link baru: #/r/PAYLOAD
-      const hash = window.location.hash || '';
-      let trackPayload = null;
+    $('#dashboard').classList.add('active');
 
-      if (hash.startsWith('#/r/')) {
-        const encoded = hash.slice(4); // hapus #/r/
-        trackPayload = decodePayload(encoded);
+    if (location.protocol === 'file:') {
+      $('#host-notice').style.display = 'block';
+    }
+
+    $('#form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const url = $('#url').value.trim();
+      const name = $('#name').value.trim();
+      if (!url) return;
+
+      const btn = $('#btn-create');
+      btn.disabled = true;
+      btn.textContent = 'Membuat...';
+      try {
+        const link = await createLink(url, name);
+        $('#result').classList.add('show');
+        $('#result-link').value = link.trackingUrl;
+        $('#result-status').textContent = link.binId ? '● Online · Siap dibagikan' : '○ Lokal (host file agar multi-user)';
+        $('#url').value = '';
+        $('#name').value = '';
+        refresh();
+      } catch (err) {
+        alert('Gagal: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Buat Link Tracking';
       }
+    });
 
-      // Kompatibilitas format lama ?id=xxx
-      if (!trackPayload) {
-        const params = new URLSearchParams(window.location.search);
-        const oldId = params.get('id');
-        if (oldId) {
-          const existing = getLink(oldId);
-          if (existing) {
-            trackPayload = { i: existing.id, u: existing.originalUrl, n: existing.name };
-          }
-        }
-      }
+    $('#btn-copy').addEventListener('click', function () {
+      navigator.clipboard.writeText($('#result-link').value).then(function () {
+        $('#btn-copy').textContent = 'Tersalin!';
+        setTimeout(function () { $('#btn-copy').textContent = 'Salin'; }, 1500);
+      });
+    });
 
-      if (trackPayload && trackPayload.u) {
-        // Mode tracking + redirect
-        runTrackingMode(trackPayload);
-      } else {
-        // Mode dashboard
-        document.getElementById('dashboard').classList.add('active');
-        document.getElementById('track-screen').classList.remove('active');
+    $('#btn-test').addEventListener('click', function () {
+      const u = $('#result-link').value;
+      if (u) window.open(u, '_blank');
+    });
 
-        // Event listeners
-        document.getElementById('create-form').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const url = document.getElementById('original-url').value.trim();
-          const name = document.getElementById('link-name').value.trim();
-          if (!url) return;
+    $('#m-close').addEventListener('click', function () { $('#modal').classList.remove('show'); });
+    $('#modal-bg').addEventListener('click', function () { $('#modal').classList.remove('show'); });
 
-          const btn = e.target.querySelector('button[type="submit"]');
-          const oldText = btn.innerHTML;
-          btn.disabled = true;
-          btn.innerHTML = 'Membuat link...';
-
-          try {
-            const link = await createLink(url, name);
-            const resultBox = document.getElementById('result-box');
-            resultBox.classList.remove('hidden');
-            document.getElementById('tracking-link').value = link.trackingUrl;
-            document.getElementById('result-id').textContent = `ID: ${link.id}${link.binId ? ' · Online' : ' · Lokal'}`;
-            document.getElementById('original-url').value = '';
-            document.getElementById('link-name').value = '';
-            refreshUI();
-          } catch (err) {
-            alert('Gagal membuat link: ' + err.message);
-          } finally {
-            btn.disabled = false;
-            btn.innerHTML = oldText;
-          }
-        });
-
-        document.getElementById('btn-copy').addEventListener('click', () => {
-          const input = document.getElementById('tracking-link');
-          navigator.clipboard.writeText(input.value).then(() => {
-            const btn = document.getElementById('btn-copy');
-            btn.textContent = 'Tersalin!';
-            setTimeout(() => btn.textContent = 'Salin', 1500);
-          });
-        });
-
-        document.getElementById('btn-open-track').addEventListener('click', () => {
-          const url = document.getElementById('tracking-link').value;
-          if (url) window.open(url, '_blank');
-        });
-
-        document.getElementById('modal-close').addEventListener('click', closeDetail);
-        document.querySelector('.modal-backdrop').addEventListener('click', closeDetail);
-
-        // Export semua data ke file JSON
-        document.getElementById('btn-export').addEventListener('click', () => {
-          const data = loadData();
-          const links = Object.values(data.links || {});
-
-          if (links.length === 0) {
-            alert('Belum ada data untuk diexport.');
-            return;
-          }
-
-          // Format data lebih rapi untuk export
-          const exportData = {
-            exportedAt: new Date().toISOString(),
-            totalLinks: links.length,
-            totalClicks: links.reduce((sum, l) => sum + l.visits.length, 0),
-            links: links.map(link => ({
-              id: link.id,
-              name: link.name,
-              originalUrl: link.originalUrl,
-              trackingUrl: link.trackingUrl,
-              createdAt: new Date(link.createdAt).toISOString(),
-              totalVisits: link.visits.length,
-              visits: link.visits.map(v => ({
+    $('#btn-export').addEventListener('click', function () {
+      const links = Object.values(load().links);
+      if (!links.length) { alert('Belum ada data.'); return; }
+      const out = {
+        exportedAt: new Date().toISOString(),
+        totalLinks: links.length,
+        totalClicks: links.reduce(function (s, l) { return s + (l.visits || []).length; }, 0),
+        links: links.map(function (l) {
+          return {
+            id: l.id, name: l.name, originalUrl: l.originalUrl,
+            trackingUrl: l.trackingUrl, createdAt: new Date(l.createdAt).toISOString(),
+            totalVisits: (l.visits || []).length,
+            visits: (l.visits || []).map(function (v) {
+              return {
                 waktu: new Date(v.timestamp).toISOString(),
-                ip: v.ip || null,
-                kota: v.city || null,
-                wilayah: v.region || null,
-                negara: v.country || null,
-                kodePos: v.postal || null,
-                latitude: v.lat || null,
-                longitude: v.lon || null,
-                isp: v.isp || null,
-                timezone: v.timezone || null,
-                perangkat: getDeviceInfo(v.userAgent).device,
-                os: getDeviceInfo(v.userAgent).os,
-                browser: getDeviceInfo(v.userAgent).browser,
-                referrer: v.referrer || 'Direct',
-                userAgent: v.userAgent || null,
-                fingerprint: v.fingerprint || null
-              }))
-            }))
+                ip: v.ip, kota: v.city, wilayah: v.region, negara: v.country,
+                latitude: v.lat, longitude: v.lon, isp: v.isp, timezone: v.timezone,
+                perangkat: deviceInfo(v.userAgent).device,
+                os: deviceInfo(v.userAgent).os,
+                browser: deviceInfo(v.userAgent).browser,
+                referrer: v.referrer || 'Direct'
+              };
+            })
           };
+        })
+      };
+      const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'linktracker-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+    });
 
-          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `linktracker-data-${new Date().toISOString().slice(0,10)}.json`;
-          a.click();
-          URL.revokeObjectURL(url);
-        });
+    $('#btn-clear').addEventListener('click', function () {
+      if (!confirm('Hapus SEMUA data?')) return;
+      localStorage.removeItem(STORAGE);
+      refresh();
+      $('#result').classList.remove('show');
+    });
 
-        document.getElementById('btn-clear').addEventListener('click', () => {
-          if (confirm('Hapus SEMUA data link tracking? Tindakan ini tidak bisa dibatalkan.')) {
-            localStorage.removeItem(STORAGE_KEY);
-            refreshUI();
-            document.getElementById('result-box').classList.add('hidden');
-          }
-        });
+    refresh();
+    setInterval(refresh, 5000);
+  }
 
-        window.addEventListener('storage', (e) => {
-          if (e.key === STORAGE_KEY) refreshUI();
-        });
-        window.addEventListener('tracker-update', refreshUI);
-        setInterval(refreshUI, 3000);
-
-        refreshUI();
-      }
-    }
-
-    init();
-  </script>
+  init();
+})();
+</script>
 </body>
 </html>
