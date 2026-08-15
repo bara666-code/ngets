@@ -1,457 +1,1145 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Link Tracker | Pelacak Pengunjung Real-Time</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #38bdf8;
-            --accent2: #22d3ee;
-            --text: #f1f5f9;
-            --muted: #94a3b8;
-            --success: #4ade80;
-            --border: #334155;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: var(--text);
-            min-height: 100vh;
-            line-height: 1.5;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        header {
-            text-align: center;
-            padding: 30px 0 20px;
-        }
-        header h1 {
-            font-size: 2rem;
-            background: linear-gradient(90deg, var(--accent), var(--accent2));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
-        }
-        header p { color: var(--muted); font-size: 1rem; }
-        .badge {
-            display: inline-block;
-            background: rgba(56, 189, 248, 0.15);
-            color: var(--accent);
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            margin-top: 10px;
-            border: 1px solid rgba(56, 189, 248, 0.3);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 25px;
-        }
-        .card {
-            background: var(--card);
-            border-radius: 16px;
-            padding: 22px;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            margin-bottom: 16px;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.95rem;
-        }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: var(--muted); }
-        .info-value { font-weight: 600; text-align: right; max-width: 60%; word-break: break-all; }
-        #map {
-            height: 280px;
-            border-radius: 12px;
-            margin-top: 10px;
-            background: #0f172a;
-        }
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-            font-size: 0.9rem;
-        }
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-        .btn {
-            background: linear-gradient(90deg, var(--accent), var(--accent2));
-            color: #0f172a;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 0.95rem;
-            transition: transform 0.15s, opacity 0.15s;
-            width: 100%;
-            margin-top: 12px;
-        }
-        .btn:hover { transform: translateY(-2px); opacity: 0.95; }
-        .btn:active { transform: translateY(0); }
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-        .history-list {
-            max-height: 320px;
-            overflow-y: auto;
-            margin-top: 10px;
-        }
-        .history-item {
-            background: rgba(0,0,0,0.25);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 10px;
-            font-size: 0.85rem;
-        }
-        .history-item strong { color: var(--accent2); }
-        .empty { color: var(--muted); text-align: center; padding: 20px; }
-        .link-box {
-            background: rgba(0,0,0,0.3);
-            border: 1px dashed var(--border);
-            border-radius: 10px;
-            padding: 14px;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 0.9rem;
-            margin: 12px 0;
-            color: var(--accent2);
-        }
-        .note {
-            background: rgba(56, 189, 248, 0.08);
-            border-left: 3px solid var(--accent);
-            padding: 12px 16px;
-            border-radius: 0 10px 10px 0;
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-top: 20px;
-        }
-        footer {
-            text-align: center;
-            padding: 30px 0;
-            color: var(--muted);
-            font-size: 0.85rem;
-        }
-        .loading { color: var(--muted); font-style: italic; }
-        @media (max-width: 600px) {
-            header h1 { font-size: 1.5rem; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Tracker Real-Time</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --bg-card: #1a1d27;
+      --bg-input: #12151e;
+      --border: #2a2f3d;
+      --text: #e8eaed;
+      --text-muted: #9aa0b0;
+      --primary: #6366f1;
+      --primary-hover: #818cf8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    /* ===== TRACKING / REDIRECT MODE ===== */
+    .track-screen {
+      display: none;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .track-screen.active { display: flex; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #2a2f3d;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .track-msg { color: var(--text-muted); font-size: 0.95rem; }
+
+    /* ===== DASHBOARD ===== */
+    .dashboard { display: none; }
+    .dashboard.active { display: block; }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+    .logo svg { color: var(--primary); }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    .create-card h2 { font-size: 1.25rem; margin-bottom: 6px; }
+    .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    input[type="url"], input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    input:focus { outline: none; border-color: var(--primary); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      width: 100%;
+      padding: 13px;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 8px;
+    }
+    .btn-ghost:hover { color: var(--text); background: var(--bg-input); }
+    .btn.small { padding: 6px 12px; font-size: 0.8rem; }
+
+    .result-box {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 10px;
+    }
+    .result-box.hidden { display: none; }
+    .result-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
+    .result-link-wrap { display: flex; gap: 8px; }
+    .result-link-wrap input {
+      flex: 1;
+      font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
+    }
+    .result-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 14px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1.2;
+    }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-header h2 { font-size: 1.15rem; }
+    .badge {
+      background: var(--bg-input);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .links-list { display: flex; flex-direction: column; gap: 10px; }
+    .link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .link-item:hover { border-color: var(--primary); }
+    .link-info { flex: 1; min-width: 0; }
+    .link-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .link-url {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .link-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: 12px;
+    }
+    .link-clicks {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--primary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .link-actions { display: flex; gap: 4px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state svg { margin-bottom: 12px; opacity: 0.5; }
+    .empty-state.hidden { display: none; }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal.hidden { display: none; }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 { font-size: 1.1rem; }
+    .modal-body { padding: 20px; overflow-y: auto; }
+
+    .detail-info { margin-bottom: 20px; }
+    .info-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+    }
+    .info-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
+    .info-value { font-size: 0.9rem; word-break: break-all; }
+    .info-value.link { color: var(--primary); text-decoration: none; }
+    .info-value.link:hover { text-decoration: underline; }
+    .info-value.mono {
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      background: var(--bg-input);
+      padding: 8px 10px;
+      border-radius: 6px;
+    }
+
+    .detail-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .mini-stat {
+      background: var(--bg-input);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .mini-value {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .mini-label { font-size: 0.75rem; color: var(--text-muted); }
+
+    .visits-title {
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .live-dot {
+      width: 8px; height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .visits-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .visit-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+    }
+    .visit-time { font-weight: 600; margin-bottom: 4px; }
+    .visit-details {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+    }
+    .visit-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 24px;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .link-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .link-meta {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+      }
+      .result-link-wrap { flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🔗 Real-Time Link Tracker</h1>
-            <p>Pelacak pengunjung akurat secara real-time via link</p>
-            <div class="badge">Single File • HTML + JavaScript • No Backend Required</div>
-        </header>
 
-        <div class="grid">
-            <!-- Current Visitor Card -->
-            <div class="card">
-                <h2>📍 Informasi Pengunjung Saat Ini</h2>
-                <div class="status">
-                    <div class="dot"></div>
-                    <span>Live • Real-time</span>
-                </div>
-                <div id="visitorInfo">
-                    <div class="loading">Mengambil data lokasi & IP...</div>
-                </div>
-            </div>
+  <!-- ========== MODE TRACKING (Redirect) ========== -->
+  <div id="track-screen" class="track-screen">
+    <div class="spinner"></div>
+    <p class="track-msg" id="track-msg">Mengalihkan ke tujuan...</p>
+  </div>
 
-            <!-- Device & Browser -->
-            <div class="card">
-                <h2>💻 Perangkat & Browser</h2>
-                <div id="deviceInfo">
-                    <div class="loading">Menganalisis perangkat...</div>
-                </div>
-            </div>
-
-            <!-- Map -->
-            <div class="card" style="grid-column: 1 / -1;">
-                <h2>🗺️ Lokasi di Peta</h2>
-                <div id="map"></div>
-            </div>
-
-            <!-- Tracking Link -->
-            <div class="card">
-                <h2>🔗 Link Tracking Anda</h2>
-                <p style="color:var(--muted);font-size:0.9rem;margin-bottom:8px;">
-                    Bagikan link ini. Siapa saja yang membukanya akan melihat data mereka sendiri (disimpan lokal di browser mereka).
-                </p>
-                <div class="link-box" id="trackingLink">Memuat...</div>
-                <button class="btn" onclick="copyLink()">📋 Salin Link Tracking</button>
-                <button class="btn btn-secondary" onclick="refreshData()" style="margin-top:8px;">🔄 Refresh Data</button>
-            </div>
-
-            <!-- Visit History (Local) -->
-            <div class="card">
-                <h2>📜 Riwayat Kunjungan (Lokal)</h2>
-                <p style="color:var(--muted);font-size:0.85rem;margin-bottom:8px;">
-                    Disimpan di localStorage browser ini saja.
-                </p>
-                <div class="history-list" id="historyList">
-                    <div class="empty">Belum ada riwayat</div>
-                </div>
-                <button class="btn btn-secondary" onclick="clearHistory()">🗑️ Hapus Riwayat</button>
-            </div>
+  <!-- ========== MODE DASHBOARD ========== -->
+  <div id="dashboard" class="dashboard">
+    <div class="app">
+      <header class="header">
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          <span>LinkTracker</span>
         </div>
-
-        <div class="note">
-            <strong>Catatan penting:</strong><br>
-            • Website ini 100% client-side (HTML + JavaScript murni). Tidak ada server Python yang berjalan di sini.<br>
-            • Data hanya tersimpan di browser pengunjung (localStorage). Tidak ada database pusat.<br>
-            • Untuk tracking multi-pengunjung secara real-time (seperti Google Analytics), Anda memerlukan backend (Python/Flask/FastAPI + database) + hosting.<br>
-            • Akurasi lokasi bergantung pada database IP geolocation (bukan GPS). Bisa berbeda beberapa kilometer.
+        <div class="header-actions">
+          <button id="btn-export" class="btn btn-ghost" title="Export data JSON">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <button id="btn-clear" class="btn btn-ghost" title="Hapus semua data">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
         </div>
+      </header>
 
-        <footer>
-            Dibuat sebagai single <code>index.html</code> • Real-time via JavaScript • 2026
-        </footer>
+      <section class="card create-card">
+        <h2>Buat Link Tracking</h2>
+        <p class="subtitle">Masukkan URL asli, lalu dapatkan link tracking unik yang akurat secara real-time.</p>
+        
+        <form id="create-form">
+          <div class="form-group">
+            <label for="original-url">URL Asli</label>
+            <input type="url" id="original-url" placeholder="https://contoh.com/halaman" required>
+          </div>
+          <div class="form-group">
+            <label for="link-name">Nama Link (opsional)</label>
+            <input type="text" id="link-name" placeholder="Kampanye Instagram, Promo, dll">
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Buat Link Tracking
+          </button>
+        </form>
+
+        <div id="result-box" class="result-box hidden">
+          <div class="result-label">Link Tracking Kamu:</div>
+          <div class="result-link-wrap">
+            <input type="text" id="tracking-link" readonly>
+            <button id="btn-copy" class="btn btn-secondary">Salin</button>
+          </div>
+          <div class="result-meta">
+            <span id="result-id"></span>
+            <button id="btn-open-track" class="btn btn-ghost small">Buka Halaman Tracking</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid" id="stats-overview">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-links">0</div>
+          <div class="stat-label">Total Link</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-clicks">0</div>
+          <div class="stat-label">Total Klik</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-today">0</div>
+          <div class="stat-label">Klik Hari Ini</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-unique">0</div>
+          <div class="stat-label">Pengunjung Unik</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <h2>Daftar Link Tracking</h2>
+          <span class="badge" id="link-count">0 link</span>
+        </div>
+        <div id="links-list" class="links-list">
+          <div class="empty-state" id="empty-links">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            <p>Belum ada link tracking. Buat yang pertama di atas!</p>
+          </div>
+        </div>
+      </section>
     </div>
+  </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // ========== CONFIG ==========
-        const HISTORY_KEY = 'rt_tracker_history';
-        const MAX_HISTORY = 50;
-        let map = null;
-        let marker = null;
+  <!-- Modal Detail -->
+  <div id="detail-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Detail Link</h3>
+        <button id="modal-close" class="btn btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-info">
+          <div class="info-row">
+            <span class="info-label">URL Asli</span>
+            <a id="modal-original" href="#" target="_blank" class="info-value link"></a>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Link Tracking</span>
+            <div class="info-value mono" id="modal-tracking"></div>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Dibuat</span>
+            <span class="info-value" id="modal-created"></span>
+          </div>
+        </div>
 
-        // ========== INIT ==========
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('trackingLink').textContent = window.location.href;
-            loadDeviceInfo();
-            fetchVisitorData();
-            renderHistory();
+        <div class="detail-stats">
+          <div class="mini-stat">
+            <span class="mini-value" id="modal-clicks">0</span>
+            <span class="mini-label">Total Klik</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-value" id="modal-unique">0</span>
+            <span class="mini-label">Unik</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-value" id="modal-today">0</span>
+            <span class="mini-label">Hari Ini</span>
+          </div>
+        </div>
+
+        <h4 class="visits-title">Riwayat Kunjungan <span class="live-dot" title="Update real-time"></span></h4>
+        <div id="visits-list" class="visits-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'linktracker_data_v1';
+
+    // ========== Helpers ==========
+    function generateId() {
+      return Math.random().toString(36).substring(2, 8);
+    }
+
+    function getBaseUrl() {
+      // Ambil path bersih tanpa query/hash
+      let path = window.location.pathname;
+      // Jika dibuka sebagai file://, tetap gunakan full path
+      return window.location.origin + path;
+    }
+
+    // Encode / Decode payload (URL aman, tidak kelihatan seperti tracking)
+    function encodePayload(obj) {
+      try {
+        const json = JSON.stringify(obj);
+        // base64url (aman di URL)
+        return btoa(unescape(encodeURIComponent(json)))
+          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      } catch {
+        return '';
+      }
+    }
+
+    function decodePayload(str) {
+      try {
+        // restore base64
+        let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        const json = decodeURIComponent(escape(atob(b64)));
+        return JSON.parse(json);
+      } catch {
+        return null;
+      }
+    }
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : { links: {} };
+      } catch {
+        return { links: {} };
+      }
+    }
+
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      window.dispatchEvent(new CustomEvent('tracker-update'));
+    }
+
+    function formatDate(ts) {
+      return new Date(ts).toLocaleString('id-ID', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+
+    function isToday(ts) {
+      const d = new Date(ts);
+      const now = new Date();
+      return d.getDate() === now.getDate() &&
+             d.getMonth() === now.getMonth() &&
+             d.getFullYear() === now.getFullYear();
+    }
+
+    function getDeviceInfo(ua) {
+      if (!ua) return { device: 'Unknown', browser: 'Unknown', os: 'Unknown' };
+      let device = 'Desktop';
+      if (/Mobile|Android|iPhone|iPad/i.test(ua)) device = 'Mobile';
+      else if (/Tablet|iPad/i.test(ua)) device = 'Tablet';
+
+      let browser = 'Unknown';
+      if (ua.includes('Firefox')) browser = 'Firefox';
+      else if (ua.includes('Edg')) browser = 'Edge';
+      else if (ua.includes('Chrome')) browser = 'Chrome';
+      else if (ua.includes('Safari')) browser = 'Safari';
+      else if (ua.includes('Opera') || ua.includes('OPR')) browser = 'Opera';
+
+      let os = 'Unknown';
+      if (ua.includes('Windows')) os = 'Windows';
+      else if (ua.includes('Mac OS')) os = 'macOS';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+      else if (ua.includes('Linux')) os = 'Linux';
+
+      return { device, browser, os };
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function getFingerprint() {
+      const nav = window.navigator;
+      const screen = window.screen;
+      const data = [
+        nav.userAgent, nav.language,
+        screen.width, screen.height, screen.colorDepth,
+        new Date().getTimezoneOffset()
+      ].join('|');
+      let hash = 0;
+      for (let i = 0; i < data.length; i++) {
+        hash = ((hash << 5) - hash) + data.charCodeAt(i);
+        hash |= 0;
+      }
+      return 'fp_' + Math.abs(hash).toString(36);
+    }
+
+    // IP-based geolocation saja (tanpa izin / popup dari user)
+    async function getGeoInfo() {
+      const sources = [
+        async () => {
+          const res = await fetch('https://ipapi.co/json/');
+          if (!res.ok) throw new Error('fail');
+          const d = await res.json();
+          return {
+            ip: d.ip,
+            city: d.city,
+            region: d.region,
+            country: d.country_name || d.country,
+            countryCode: d.country_code,
+            postal: d.postal,
+            lat: d.latitude,
+            lon: d.longitude,
+            timezone: d.timezone,
+            isp: d.org,
+            asn: d.asn,
+            locationSource: 'ip'
+          };
+        },
+        async () => {
+          const res = await fetch('https://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,query');
+          if (!res.ok) throw new Error('fail');
+          const d = await res.json();
+          if (d.status === 'fail') throw new Error('fail');
+          return {
+            ip: d.query,
+            city: d.city,
+            region: d.regionName,
+            country: d.country,
+            countryCode: d.countryCode,
+            postal: d.zip,
+            lat: d.lat,
+            lon: d.lon,
+            timezone: d.timezone,
+            isp: d.isp || d.org,
+            asn: d.as,
+            locationSource: 'ip'
+          };
+        },
+        async () => {
+          const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+          if (!res.ok) throw new Error('fail');
+          const d = await res.json();
+          return {
+            ip: d.ip,
+            city: d.city,
+            region: d.region,
+            country: d.country,
+            countryCode: d.country_code,
+            postal: null,
+            lat: parseFloat(d.latitude),
+            lon: parseFloat(d.longitude),
+            timezone: d.timezone,
+            isp: d.organization_name,
+            asn: d.asn,
+            locationSource: 'ip'
+          };
+        }
+      ];
+
+      for (const src of sources) {
+        try {
+          const data = await src();
+          if (data && (data.city || data.country || data.ip)) return data;
+        } catch (e) { /* coba sumber berikutnya */ }
+      }
+      return {
+        ip: null, city: null, region: null, country: null,
+        lat: null, lon: null, locationSource: 'ip'
+      };
+    }
+
+    // ========== Core ==========
+    function createLink(originalUrl, name = '') {
+      const data = loadData();
+      const id = generateId();
+      const displayName = name || originalUrl.replace(/^https?:\/\//, '').slice(0, 40);
+
+      // Payload self-contained → redirect selalu berhasil meski di browser lain
+      const payload = encodePayload({
+        i: id,
+        u: originalUrl,
+        n: displayName
+      });
+
+      // Format link bersih: #/r/xxxxx  (tidak kelihatan seperti ?id= tracking)
+      const trackingUrl = `${getBaseUrl()}#/r/${payload}`;
+
+      data.links[id] = {
+        id,
+        name: displayName,
+        originalUrl,
+        trackingUrl,
+        createdAt: Date.now(),
+        visits: []
+      };
+      saveData(data);
+      return data.links[id];
+    }
+
+    function getLink(id) {
+      return loadData().links[id] || null;
+    }
+
+    function deleteLink(id) {
+      const data = loadData();
+      delete data.links[id];
+      saveData(data);
+    }
+
+    function getAllLinks() {
+      return Object.values(loadData().links).sort((a, b) => b.createdAt - a.createdAt);
+    }
+
+    function getStats() {
+      const links = getAllLinks();
+      let totalClicks = 0, todayClicks = 0;
+      const uniqueSet = new Set();
+      links.forEach(link => {
+        totalClicks += link.visits.length;
+        link.visits.forEach(v => {
+          if (isToday(v.timestamp)) todayClicks++;
+          if (v.fingerprint) uniqueSet.add(v.fingerprint);
+        });
+      });
+      return {
+        totalLinks: links.length,
+        totalClicks,
+        todayClicks,
+        uniqueVisitors: uniqueSet.size
+      };
+    }
+
+    // ========== UI ==========
+    function renderStats() {
+      const s = getStats();
+      document.getElementById('stat-total-links').textContent = s.totalLinks;
+      document.getElementById('stat-total-clicks').textContent = s.totalClicks;
+      document.getElementById('stat-today').textContent = s.todayClicks;
+      document.getElementById('stat-unique').textContent = s.uniqueVisitors;
+    }
+
+    function renderLinksList() {
+      const list = document.getElementById('links-list');
+      const empty = document.getElementById('empty-links');
+      const links = getAllLinks();
+      document.getElementById('link-count').textContent = `${links.length} link`;
+
+      list.querySelectorAll('.link-item').forEach(el => el.remove());
+
+      if (links.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      links.forEach(link => {
+        const item = document.createElement('div');
+        item.className = 'link-item';
+        item.dataset.id = link.id;
+        const uniqueCount = new Set(link.visits.map(v => v.fingerprint)).size;
+
+        item.innerHTML = `
+          <div class="link-info">
+            <div class="link-name">${escapeHtml(link.name)}</div>
+            <div class="link-url">${escapeHtml(link.originalUrl)}</div>
+          </div>
+          <div class="link-meta">
+            <span class="link-clicks">${link.visits.length} klik · ${uniqueCount} unik</span>
+            <div class="link-actions">
+              <button class="btn btn-ghost small btn-copy-link" title="Salin link" data-url="${escapeHtml(link.trackingUrl)}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              </button>
+              <button class="btn btn-ghost small btn-delete" title="Hapus" data-id="${link.id}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        `;
+
+        item.addEventListener('click', (e) => {
+          if (e.target.closest('.btn-copy-link') || e.target.closest('.btn-delete')) return;
+          openDetail(link.id);
+        });
+        list.appendChild(item);
+      });
+
+      list.querySelectorAll('.btn-copy-link').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(btn.dataset.url).then(() => {
+            btn.innerHTML = '✓';
+            setTimeout(() => {
+              btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+            }, 1500);
+          });
+        });
+      });
+
+      list.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm('Hapus link tracking ini beserta semua data kunjungannya?')) {
+            deleteLink(btn.dataset.id);
+            refreshUI();
+          }
+        });
+      });
+    }
+
+    function openDetail(id) {
+      const link = getLink(id);
+      if (!link) return;
+
+      document.getElementById('modal-title').textContent = link.name;
+      document.getElementById('modal-original').textContent = link.originalUrl;
+      document.getElementById('modal-original').href = link.originalUrl;
+      document.getElementById('modal-tracking').textContent = link.trackingUrl;
+      document.getElementById('modal-created').textContent = formatDate(link.createdAt);
+
+      const unique = new Set(link.visits.map(v => v.fingerprint)).size;
+      const today = link.visits.filter(v => isToday(v.timestamp)).length;
+      document.getElementById('modal-clicks').textContent = link.visits.length;
+      document.getElementById('modal-unique').textContent = unique;
+      document.getElementById('modal-today').textContent = today;
+
+      const visitsList = document.getElementById('visits-list');
+      visitsList.innerHTML = '';
+
+      if (link.visits.length === 0) {
+        visitsList.innerHTML = '<div class="visit-empty">Belum ada kunjungan. Bagikan link tracking-mu!</div>';
+      } else {
+        [...link.visits].sort((a, b) => b.timestamp - a.timestamp).forEach(v => {
+          const info = getDeviceInfo(v.userAgent);
+
+          // Format lokasi lebih detail
+          let locationText = '—';
+          if (v.city || v.region || v.country) {
+            locationText = [v.city, v.region, v.country].filter(Boolean).join(', ');
+          }
+          if (v.postal) locationText += ` (${v.postal})`;
+
+          // Koordinat
+          let coordText = '';
+          if (v.lat != null && v.lon != null) {
+            coordText = `${Number(v.lat).toFixed(5)}, ${Number(v.lon).toFixed(5)}`;
+          }
+
+          const el = document.createElement('div');
+          el.className = 'visit-item';
+          el.innerHTML = `
+            <div class="visit-time">${formatDate(v.timestamp)}</div>
+            <div class="visit-details">
+              <span>📍 ${locationText}</span>
+              ${coordText ? `<span>🗺️ ${coordText}</span>` : ''}
+              ${v.isp ? `<span>🏢 ${v.isp}</span>` : ''}
+              ${v.timezone ? `<span>🕒 ${v.timezone}</span>` : ''}
+              <span>📱 ${info.device} · ${info.os}</span>
+              <span>🌐 ${info.browser}</span>
+              <span>🔗 ${v.referrer || 'Direct'}</span>
+              ${v.ip ? `<span>IP: ${v.ip}</span>` : ''}
+            </div>
+          `;
+          visitsList.appendChild(el);
+        });
+      }
+      document.getElementById('detail-modal').classList.remove('hidden');
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-modal').classList.add('hidden');
+    }
+
+    function refreshUI() {
+      renderStats();
+      renderLinksList();
+    }
+
+    // ========== Tracking Mode ==========
+    // payload = { i: id, u: originalUrl, n: name }
+    async function runTrackingMode(payload) {
+      document.getElementById('track-screen').classList.add('active');
+      document.getElementById('dashboard').classList.remove('active');
+
+      if (!payload || !payload.u) {
+        document.getElementById('track-msg').textContent = 'Link tidak valid.';
+        return;
+      }
+
+      const id = payload.i || generateId();
+      const originalUrl = payload.u;
+      const name = payload.n || originalUrl.replace(/^https?:\/\//, '').slice(0, 40);
+
+      // Catat kunjungan (jika localStorage tersedia di browser ini)
+      try {
+        const data = loadData();
+        if (!data.links[id]) {
+          // Buat entry baru jika belum ada (misal dibuka di browser lain)
+          data.links[id] = {
+            id,
+            name,
+            originalUrl,
+            trackingUrl: window.location.href.split('#')[0] + '#/r/' + encodePayload(payload),
+            createdAt: Date.now(),
+            visits: []
+          };
+        }
+
+        const geo = await getGeoInfo();
+        const visit = {
+          timestamp: Date.now(),
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          referrer: document.referrer || null,
+          fingerprint: getFingerprint(),
+          screen: `${screen.width}x${screen.height}`,
+          ...geo
+        };
+
+        data.links[id].visits.push(visit);
+        saveData(data);
+      } catch (e) {
+        // Tetap lanjut redirect meskipun gagal simpan data
+        console.warn('Gagal simpan visit:', e);
+      }
+
+      // Redirect selalu berhasil karena URL ada di dalam link
+      setTimeout(() => {
+        window.location.replace(originalUrl);
+      }, 350);
+    }
+
+    // ========== Init ==========
+    function init() {
+      // Cek format link baru: #/r/PAYLOAD
+      const hash = window.location.hash || '';
+      let trackPayload = null;
+
+      if (hash.startsWith('#/r/')) {
+        const encoded = hash.slice(4); // hapus #/r/
+        trackPayload = decodePayload(encoded);
+      }
+
+      // Kompatibilitas format lama ?id=xxx
+      if (!trackPayload) {
+        const params = new URLSearchParams(window.location.search);
+        const oldId = params.get('id');
+        if (oldId) {
+          const existing = getLink(oldId);
+          if (existing) {
+            trackPayload = { i: existing.id, u: existing.originalUrl, n: existing.name };
+          }
+        }
+      }
+
+      if (trackPayload && trackPayload.u) {
+        // Mode tracking + redirect
+        runTrackingMode(trackPayload);
+      } else {
+        // Mode dashboard
+        document.getElementById('dashboard').classList.add('active');
+        document.getElementById('track-screen').classList.remove('active');
+
+        // Event listeners
+        document.getElementById('create-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const url = document.getElementById('original-url').value.trim();
+          const name = document.getElementById('link-name').value.trim();
+          if (!url) return;
+
+          const link = createLink(url, name);
+          const resultBox = document.getElementById('result-box');
+          resultBox.classList.remove('hidden');
+          document.getElementById('tracking-link').value = link.trackingUrl;
+          document.getElementById('result-id').textContent = `ID: ${link.id}`;
+          document.getElementById('original-url').value = '';
+          document.getElementById('link-name').value = '';
+          refreshUI();
         });
 
-        // ========== DEVICE INFO (Client-side) ==========
-        function loadDeviceInfo() {
-            const ua = navigator.userAgent;
-            const info = [
-                { label: 'User Agent', value: ua },
-                { label: 'Platform', value: navigator.platform || 'Tidak diketahui' },
-                { label: 'Bahasa', value: navigator.language || 'Tidak diketahui' },
-                { label: 'Cookies Enabled', value: navigator.cookieEnabled ? 'Ya' : 'Tidak' },
-                { label: 'Online', value: navigator.onLine ? 'Ya' : 'Tidak' },
-                { label: 'Screen', value: `${screen.width} × ${screen.height}` },
-                { label: 'Viewport', value: `${window.innerWidth} × ${window.innerHeight}` },
-                { label: 'Timezone', value: Intl.DateTimeFormat().resolvedOptions().timeZone },
-                { label: 'Waktu Lokal', value: new Date().toLocaleString('id-ID') },
-            ];
+        document.getElementById('btn-copy').addEventListener('click', () => {
+          const input = document.getElementById('tracking-link');
+          navigator.clipboard.writeText(input.value).then(() => {
+            const btn = document.getElementById('btn-copy');
+            btn.textContent = 'Tersalin!';
+            setTimeout(() => btn.textContent = 'Salin', 1500);
+          });
+        });
 
-            // Simple browser detection
-            let browser = 'Tidak diketahui';
-            if (ua.includes('Firefox')) browser = 'Firefox';
-            else if (ua.includes('Edg')) browser = 'Microsoft Edge';
-            else if (ua.includes('Chrome')) browser = 'Chrome';
-            else if (ua.includes('Safari')) browser = 'Safari';
-            else if (ua.includes('Opera') || ua.includes('OPR')) browser = 'Opera';
+        document.getElementById('btn-open-track').addEventListener('click', () => {
+          const url = document.getElementById('tracking-link').value;
+          if (url) window.open(url, '_blank');
+        });
 
-            let os = 'Tidak diketahui';
-            if (ua.includes('Windows')) os = 'Windows';
-            else if (ua.includes('Mac')) os = 'macOS';
-            else if (ua.includes('Linux')) os = 'Linux';
-            else if (ua.includes('Android')) os = 'Android';
-            else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+        document.getElementById('modal-close').addEventListener('click', closeDetail);
+        document.querySelector('.modal-backdrop').addEventListener('click', closeDetail);
 
-            info.unshift({ label: 'Browser', value: browser });
-            info.unshift({ label: 'Sistem Operasi', value: os });
+        // Export semua data ke file JSON
+        document.getElementById('btn-export').addEventListener('click', () => {
+          const data = loadData();
+          const links = Object.values(data.links || {});
 
-            const html = info.map(i => `
-                <div class="info-row">
-                    <span class="info-label">${i.label}</span>
-                    <span class="info-value">${i.value}</span>
-                </div>
-            `).join('');
-            document.getElementById('deviceInfo').innerHTML = html;
-        }
+          if (links.length === 0) {
+            alert('Belum ada data untuk diexport.');
+            return;
+          }
 
-        // ========== IP + GEO ==========
-        async function fetchVisitorData() {
-            const container = document.getElementById('visitorInfo');
-            container.innerHTML = '<div class="loading">Mengambil data IP & lokasi...</div>';
+          // Format data lebih rapi untuk export
+          const exportData = {
+            exportedAt: new Date().toISOString(),
+            totalLinks: links.length,
+            totalClicks: links.reduce((sum, l) => sum + l.visits.length, 0),
+            links: links.map(link => ({
+              id: link.id,
+              name: link.name,
+              originalUrl: link.originalUrl,
+              trackingUrl: link.trackingUrl,
+              createdAt: new Date(link.createdAt).toISOString(),
+              totalVisits: link.visits.length,
+              visits: link.visits.map(v => ({
+                waktu: new Date(v.timestamp).toISOString(),
+                ip: v.ip || null,
+                kota: v.city || null,
+                wilayah: v.region || null,
+                negara: v.country || null,
+                kodePos: v.postal || null,
+                latitude: v.lat || null,
+                longitude: v.lon || null,
+                isp: v.isp || null,
+                timezone: v.timezone || null,
+                perangkat: getDeviceInfo(v.userAgent).device,
+                os: getDeviceInfo(v.userAgent).os,
+                browser: getDeviceInfo(v.userAgent).browser,
+                referrer: v.referrer || 'Direct',
+                userAgent: v.userAgent || null,
+                fingerprint: v.fingerprint || null
+              }))
+            }))
+          };
 
-            try {
-                // Primary free CORS-friendly API (no key)
-                const res = await fetch('https://ippubblico.org/?api=1');
-                if (!res.ok) throw new Error('API error');
-                const data = await res.json();
+          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `linktracker-data-${new Date().toISOString().slice(0,10)}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
 
-                if (data.status !== 'ok') throw new Error('Invalid response');
+        document.getElementById('btn-clear').addEventListener('click', () => {
+          if (confirm('Hapus SEMUA data link tracking? Tindakan ini tidak bisa dibatalkan.')) {
+            localStorage.removeItem(STORAGE_KEY);
+            refreshUI();
+            document.getElementById('result-box').classList.add('hidden');
+          }
+        });
 
-                const geo = data.geo || {};
-                const rows = [
-                    { label: 'IP Address', value: data.ip || data.ipv4 || '-' },
-                    { label: 'Kota', value: geo.city || '-' },
-                    { label: 'Region / Provinsi', value: geo.region || '-' },
-                    { label: 'Negara', value: `${geo.country || '-'} (${geo.country_code || ''})` },
-                    { label: 'Latitude', value: geo.lat ?? '-' },
-                    { label: 'Longitude', value: geo.lon ?? '-' },
-                    { label: 'ISP / Provider', value: data.isp || '-' },
-                    { label: 'ASN', value: data.asn || '-' },
-                    { label: 'Timezone (API)', value: data.timezone || '-' },
-                    { label: 'Waktu API', value: data.datetime || '-' },
-                ];
+        window.addEventListener('storage', (e) => {
+          if (e.key === STORAGE_KEY) refreshUI();
+        });
+        window.addEventListener('tracker-update', refreshUI);
+        setInterval(refreshUI, 3000);
 
-                container.innerHTML = rows.map(r => `
-                    <div class="info-row">
-                        <span class="info-label">${r.label}</span>
-                        <span class="info-value">${r.value}</span>
-                    </div>
-                `).join('');
+        refreshUI();
+      }
+    }
 
-                // Init / update map
-                if (geo.lat && geo.lon) {
-                    initMap(geo.lat, geo.lon, `${geo.city || ''}, ${geo.country || ''}`);
-                }
-
-                // Save to history
-                saveToHistory({
-                    time: new Date().toISOString(),
-                    ip: data.ip || data.ipv4,
-                    city: geo.city,
-                    region: geo.region,
-                    country: geo.country,
-                    country_code: geo.country_code,
-                    lat: geo.lat,
-                    lon: geo.lon,
-                    isp: data.isp,
-                    browser: navigator.userAgent
-                });
-
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = `
-                    <div class="info-row">
-                        <span class="info-label">Error</span>
-                        <span class="info-value" style="color:#f87171;">Gagal mengambil data. Coba refresh.</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Detail</span>
-                        <span class="info-value">${err.message}</span>
-                    </div>
-                `;
-            }
-        }
-
-        // ========== MAP ==========
-        function initMap(lat, lon, popupText) {
-            if (!map) {
-                map = L.map('map').setView([lat, lon], 10);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap',
-                    maxZoom: 18
-                }).addTo(map);
-            } else {
-                map.setView([lat, lon], 10);
-            }
-
-            if (marker) {
-                marker.setLatLng([lat, lon]);
-            } else {
-                marker = L.marker([lat, lon]).addTo(map);
-            }
-            marker.bindPopup(popupText || 'Lokasi perkiraan').openPopup();
-        }
-
-        // ========== HISTORY (localStorage) ==========
-        function saveToHistory(entry) {
-            let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-            // Avoid exact duplicate in last entry
-            if (history.length && history[0].ip === entry.ip && 
-                Math.abs(new Date(history[0].time) - new Date(entry.time)) < 60000) {
-                return;
-            }
-            history.unshift(entry);
-            if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-            renderHistory();
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-
-            if (!history.length) {
-                list.innerHTML = '<div class="empty">Belum ada riwayat kunjungan</div>';
-                return;
-            }
-
-            list.innerHTML = history.map(h => {
-                const time = new Date(h.time).toLocaleString('id-ID');
-                return `
-                    <div class="history-item">
-                        <strong>${time}</strong><br>
-                        IP: ${h.ip || '-'} • ${h.city || '-'}, ${h.region || '-'} (${h.country || '-'})<br>
-                        ISP: ${h.isp || '-'}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function clearHistory() {
-            if (confirm('Yakin ingin menghapus semua riwayat lokal?')) {
-                localStorage.removeItem(HISTORY_KEY);
-                renderHistory();
-            }
-        }
-
-        // ========== UTILS ==========
-        function copyLink() {
-            const link = window.location.href;
-            navigator.clipboard.writeText(link).then(() => {
-                alert('Link tracking berhasil disalin!\n\n' + link);
-            }).catch(() => {
-                prompt('Salin link ini:', link);
-            });
-        }
-
-        function refreshData() {
-            fetchVisitorData();
-            loadDeviceInfo();
-        }
-
-        // Update local time every second
-        setInterval(() => {
-            const el = document.querySelector('#deviceInfo .info-row:last-child .info-value');
-            // Optional: could refresh time display
-        }, 1000);
-    </script>
+    init();
+  </script>
 </body>
 </html>
