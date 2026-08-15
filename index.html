@@ -554,6 +554,7 @@
 
   <script>
     const STORAGE_KEY = 'linktracker_data_v1';
+    const REMOTE_API = 'https://jsonbin-zeta.vercel.app/api/bins';
 
     // ========== Helpers ==========
     function generateId() {
@@ -561,17 +562,14 @@
     }
 
     function getBaseUrl() {
-      // Ambil path bersih tanpa query/hash
       let path = window.location.pathname;
-      // Jika dibuka sebagai file://, tetap gunakan full path
       return window.location.origin + path;
     }
 
-    // Encode / Decode payload (URL aman, tidak kelihatan seperti tracking)
+    // Encode / Decode payload (URL aman)
     function encodePayload(obj) {
       try {
         const json = JSON.stringify(obj);
-        // base64url (aman di URL)
         return btoa(unescape(encodeURIComponent(json)))
           .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       } catch {
@@ -581,7 +579,6 @@
 
     function decodePayload(str) {
       try {
-        // restore base64
         let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
         while (b64.length % 4) b64 += '=';
         const json = decodeURIComponent(escape(atob(b64)));
@@ -603,6 +600,34 @@
     function saveData(data) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       window.dispatchEvent(new CustomEvent('tracker-update'));
+    }
+
+    // ========== Remote Storage (agar tracking multi-user bekerja) ==========
+    async function remoteCreate(linkData) {
+      const res = await fetch(REMOTE_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(linkData)
+      });
+      if (!res.ok) throw new Error('Gagal buat remote storage');
+      const json = await res.json();
+      return json.id; // bin id
+    }
+
+    async function remoteGet(binId) {
+      const res = await fetch(`${REMOTE_API}/${binId}`);
+      if (!res.ok) throw new Error('Gagal ambil data remote');
+      return await res.json();
+    }
+
+    async function remoteUpdate(binId, linkData) {
+      const res = await fetch(`${REMOTE_API}/${binId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(linkData)
+      });
+      if (!res.ok) throw new Error('Gagal update remote');
+      return await res.json();
     }
 
     function formatDate(ts) {
@@ -741,28 +766,41 @@
     }
 
     // ========== Core ==========
-    function createLink(originalUrl, name = '') {
+    async function createLink(originalUrl, name = '') {
       const data = loadData();
       const id = generateId();
       const displayName = name || originalUrl.replace(/^https?:\/\//, '').slice(0, 40);
 
-      // Payload self-contained → redirect selalu berhasil meski di browser lain
-      const payload = encodePayload({
-        i: id,
-        u: originalUrl,
-        n: displayName
-      });
-
-      // Format link bersih: #/r/xxxxx  (tidak kelihatan seperti ?id= tracking)
-      const trackingUrl = `${getBaseUrl()}#/r/${payload}`;
-
-      data.links[id] = {
+      const linkRecord = {
         id,
         name: displayName,
         originalUrl,
-        trackingUrl,
         createdAt: Date.now(),
         visits: []
+      };
+
+      // Simpan ke remote agar bisa dilacak dari browser/perangkat mana pun
+      let binId = null;
+      try {
+        binId = await remoteCreate(linkRecord);
+      } catch (e) {
+        console.warn('Remote create gagal, fallback lokal saja:', e);
+      }
+
+      // Payload berisi id + url + binId (redirect selalu jalan)
+      const payload = encodePayload({
+        i: id,
+        u: originalUrl,
+        n: displayName,
+        b: binId
+      });
+
+      const trackingUrl = `${getBaseUrl()}#/r/${payload}`;
+
+      data.links[id] = {
+        ...linkRecord,
+        binId,
+        trackingUrl
       };
       saveData(data);
       return data.links[id];
@@ -882,7 +920,20 @@
       });
     }
 
-    function openDetail(id) {
+    async function openDetail(id) {
+      // Sync dulu dari remote biar data terbaru
+      const data = loadData();
+      const linkRef = data.links[id];
+      if (linkRef && linkRef.binId) {
+        try {
+          const remote = await remoteGet(linkRef.binId);
+          if (remote && Array.isArray(remote.visits)) {
+            data.links[id].visits = remote.visits;
+            saveData(data);
+          }
+        } catch (e) {}
+      }
+
       const link = getLink(id);
       if (!link) return;
 
@@ -945,13 +996,38 @@
       document.getElementById('detail-modal').classList.add('hidden');
     }
 
-    function refreshUI() {
+    async function syncFromRemote() {
+      const data = loadData();
+      let changed = false;
+      const links = Object.values(data.links);
+
+      await Promise.all(links.map(async (link) => {
+        if (!link.binId) return;
+        try {
+          const remote = await remoteGet(link.binId);
+          if (remote && Array.isArray(remote.visits)) {
+            // Gabungkan visits (remote adalah sumber utama)
+            if (remote.visits.length !== link.visits.length) {
+              data.links[link.id].visits = remote.visits;
+              changed = true;
+            }
+          }
+        } catch (e) {
+          // diam saja jika gagal sync
+        }
+      }));
+
+      if (changed) saveData(data);
+    }
+
+    async function refreshUI() {
+      await syncFromRemote();
       renderStats();
       renderLinksList();
     }
 
     // ========== Tracking Mode ==========
-    // payload = { i: id, u: originalUrl, n: name }
+    // payload = { i: id, u: originalUrl, n: name, b: binId }
     async function runTrackingMode(payload) {
       document.getElementById('track-screen').classList.add('active');
       document.getElementById('dashboard').classList.remove('active');
@@ -964,22 +1040,10 @@
       const id = payload.i || generateId();
       const originalUrl = payload.u;
       const name = payload.n || originalUrl.replace(/^https?:\/\//, '').slice(0, 40);
+      const binId = payload.b || null;
 
-      // Catat kunjungan (jika localStorage tersedia di browser ini)
       try {
-        const data = loadData();
-        if (!data.links[id]) {
-          // Buat entry baru jika belum ada (misal dibuka di browser lain)
-          data.links[id] = {
-            id,
-            name,
-            originalUrl,
-            trackingUrl: window.location.href.split('#')[0] + '#/r/' + encodePayload(payload),
-            createdAt: Date.now(),
-            visits: []
-          };
-        }
-
+        document.getElementById('track-msg').textContent = 'Mencatat kunjungan...';
         const geo = await getGeoInfo();
         const visit = {
           timestamp: Date.now(),
@@ -991,17 +1055,44 @@
           ...geo
         };
 
-        data.links[id].visits.push(visit);
-        saveData(data);
+        // 1) Update remote (utama) — agar pembuat link melihat klik dari mana saja
+        if (binId) {
+          try {
+            let remote = await remoteGet(binId);
+            if (!remote.visits) remote.visits = [];
+            remote.visits.push(visit);
+            await remoteUpdate(binId, remote);
+          } catch (e) {
+            console.warn('Remote track gagal:', e);
+          }
+        }
+
+        // 2) Update local juga (jika browser yang sama)
+        try {
+          const data = loadData();
+          if (!data.links[id]) {
+            data.links[id] = {
+              id, name, originalUrl, binId,
+              trackingUrl: window.location.href.split('#')[0] + '#/r/' + encodePayload(payload),
+              createdAt: Date.now(),
+              visits: []
+            };
+          }
+          data.links[id].visits.push(visit);
+          if (binId) data.links[id].binId = binId;
+          saveData(data);
+        } catch (e) {
+          console.warn('Local track gagal:', e);
+        }
       } catch (e) {
-        // Tetap lanjut redirect meskipun gagal simpan data
-        console.warn('Gagal simpan visit:', e);
+        console.warn('Track error:', e);
       }
 
-      // Redirect selalu berhasil karena URL ada di dalam link
+      // Redirect selalu berhasil
+      document.getElementById('track-msg').textContent = 'Mengalihkan...';
       setTimeout(() => {
         window.location.replace(originalUrl);
-      }, 350);
+      }, 300);
     }
 
     // ========== Init ==========
@@ -1036,20 +1127,32 @@
         document.getElementById('track-screen').classList.remove('active');
 
         // Event listeners
-        document.getElementById('create-form').addEventListener('submit', (e) => {
+        document.getElementById('create-form').addEventListener('submit', async (e) => {
           e.preventDefault();
           const url = document.getElementById('original-url').value.trim();
           const name = document.getElementById('link-name').value.trim();
           if (!url) return;
 
-          const link = createLink(url, name);
-          const resultBox = document.getElementById('result-box');
-          resultBox.classList.remove('hidden');
-          document.getElementById('tracking-link').value = link.trackingUrl;
-          document.getElementById('result-id').textContent = `ID: ${link.id}`;
-          document.getElementById('original-url').value = '';
-          document.getElementById('link-name').value = '';
-          refreshUI();
+          const btn = e.target.querySelector('button[type="submit"]');
+          const oldText = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = 'Membuat link...';
+
+          try {
+            const link = await createLink(url, name);
+            const resultBox = document.getElementById('result-box');
+            resultBox.classList.remove('hidden');
+            document.getElementById('tracking-link').value = link.trackingUrl;
+            document.getElementById('result-id').textContent = `ID: ${link.id}${link.binId ? ' · Online' : ' · Lokal'}`;
+            document.getElementById('original-url').value = '';
+            document.getElementById('link-name').value = '';
+            refreshUI();
+          } catch (err) {
+            alert('Gagal membuat link: ' + err.message);
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = oldText;
+          }
         });
 
         document.getElementById('btn-copy').addEventListener('click', () => {
