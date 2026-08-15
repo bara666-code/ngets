@@ -346,50 +346,37 @@
     return 'fp_' + Math.abs(h).toString(36);
   }
 
-  function unwrap(j) {
+  async function remoteCreate(data) {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error('Gagal buat storage online (' + r.status + ')');
+    const j = await r.json();
+    if (!j.id) throw new Error('Storage online tidak mengembalikan ID');
+    return j.id;
+  }
+
+  async function remoteGet(id) {
+    const r = await fetch(API + '/' + id);
+    if (!r.ok) throw new Error('Gagal ambil data online (' + r.status + ')');
+    const j = await r.json();
+    // API kadang return data langsung, kadang dibungkus {data: ...}
     if (j && j.data && typeof j.data === 'object' && !Array.isArray(j.data)) return j.data;
     return j;
   }
 
-  async function remoteCreate(data) {
-    const controllers = [];
-    // Timeout 8 detik
-    const timer = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000));
-    const req = fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(async (r) => {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const j = await r.json();
-      if (!j.id) throw new Error('no id');
-      return j.id;
-    });
-    return Promise.race([req, timer]);
-  }
-
-  async function remoteGet(id) {
-    const timer = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000));
-    const req = fetch(API + '/' + id, {
-      headers: { 'Accept': 'application/json' }
-    }).then(async (r) => {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return unwrap(await r.json());
-    });
-    return Promise.race([req, timer]);
-  }
-
   async function remotePut(id, data) {
-    const timer = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000));
-    const req = fetch(API + '/' + id, {
+    const r = await fetch(API + '/' + id, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    }).then(async (r) => {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return unwrap(await r.json());
     });
-    return Promise.race([req, timer]);
+    if (!r.ok) throw new Error('Gagal update data online (' + r.status + ')');
+    const j = await r.json();
+    if (j && j.data && typeof j.data === 'object' && !Array.isArray(j.data)) return j.data;
+    return j;
   }
 
   async function getGeo() {
@@ -428,23 +415,27 @@
     const displayName = name || url.replace(/^https?:\/\//, '').slice(0, 40);
     const record = { id, name: displayName, originalUrl: url, createdAt: Date.now(), visits: [] };
 
+    // WAJIB online agar semua user yang klik bisa dilacak di dashboard
     let binId = null;
-    let onlineError = null;
     try {
       binId = await remoteCreate(record);
     } catch (e) {
-      onlineError = e;
-      console.warn('Online storage gagal:', e);
+      console.error(e);
+      // Jika file:// biasanya gagal karena CORS — beritahu user
+      if (location.protocol === 'file:') {
+        throw new Error('Buka via http:// (bukan double-click file). Jalankan: python -m http.server 8080  ATAU upload ke Netlify Drop.');
+      }
+      throw new Error('Gagal koneksi storage online. Cek internet lalu coba lagi. Detail: ' + (e.message || e));
     }
+
+    if (!binId) throw new Error('Gagal membuat link online');
 
     const payload = enc({ i: id, u: url, n: displayName, b: binId });
     const trackingUrl = baseUrl() + '#/r/' + payload;
 
     const data = load();
-    data.links[id] = { ...record, binId: binId, trackingUrl: trackingUrl, onlineError: onlineError ? String(onlineError.message || onlineError) : null };
+    data.links[id] = { ...record, binId, trackingUrl };
     save(data);
-
-    // Kembalikan info termasuk status online
     return data.links[id];
   }
 
@@ -707,18 +698,12 @@
         const link = await createLink(url, name);
         $('#result').classList.add('show');
         $('#result-link').value = link.trackingUrl;
-        if (link.binId) {
-          $('#result-status').textContent = '● Online · Semua klik user akan masuk dashboard';
-          $('#result-status').style.color = '#22c55e';
-        } else {
-          $('#result-status').textContent = '○ Offline · Link tetap redirect, tapi klik user LAIN tidak masuk dashboard. Host file ini dulu.';
-          $('#result-status').style.color = '#fbbf24';
-        }
+        $('#result-status').textContent = link.binId ? '● Online · Siap dibagikan' : '○ Lokal (host file agar multi-user)';
         $('#url').value = '';
         $('#name').value = '';
         refresh();
       } catch (err) {
-        alert('Gagal membuat link: ' + (err.message || err));
+        alert('Gagal: ' + err.message);
       } finally {
         btn.disabled = false;
         btn.textContent = 'Buat Link Tracking';
