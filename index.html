@@ -419,6 +419,11 @@
           <span>LinkTracker</span>
         </div>
         <div class="header-actions">
+          <button id="btn-export" class="btn btn-ghost" title="Export data JSON">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
           <button id="btn-clear" class="btn btn-ghost" title="Hapus semua data">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -634,20 +639,79 @@
       return 'fp_' + Math.abs(hash).toString(36);
     }
 
+    // IP-based geolocation saja (tanpa izin / popup dari user)
     async function getGeoInfo() {
-      try {
-        const res = await fetch('https://ipapi.co/json/');
-        if (!res.ok) throw new Error('geo fail');
-        const data = await res.json();
-        return {
-          ip: data.ip || null,
-          city: data.city || null,
-          region: data.region || null,
-          country: data.country_name || data.country || null
-        };
-      } catch {
-        return { ip: null, city: null, region: null, country: null };
+      const sources = [
+        async () => {
+          const res = await fetch('https://ipapi.co/json/');
+          if (!res.ok) throw new Error('fail');
+          const d = await res.json();
+          return {
+            ip: d.ip,
+            city: d.city,
+            region: d.region,
+            country: d.country_name || d.country,
+            countryCode: d.country_code,
+            postal: d.postal,
+            lat: d.latitude,
+            lon: d.longitude,
+            timezone: d.timezone,
+            isp: d.org,
+            asn: d.asn,
+            locationSource: 'ip'
+          };
+        },
+        async () => {
+          const res = await fetch('https://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,query');
+          if (!res.ok) throw new Error('fail');
+          const d = await res.json();
+          if (d.status === 'fail') throw new Error('fail');
+          return {
+            ip: d.query,
+            city: d.city,
+            region: d.regionName,
+            country: d.country,
+            countryCode: d.countryCode,
+            postal: d.zip,
+            lat: d.lat,
+            lon: d.lon,
+            timezone: d.timezone,
+            isp: d.isp || d.org,
+            asn: d.as,
+            locationSource: 'ip'
+          };
+        },
+        async () => {
+          const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+          if (!res.ok) throw new Error('fail');
+          const d = await res.json();
+          return {
+            ip: d.ip,
+            city: d.city,
+            region: d.region,
+            country: d.country,
+            countryCode: d.country_code,
+            postal: null,
+            lat: parseFloat(d.latitude),
+            lon: parseFloat(d.longitude),
+            timezone: d.timezone,
+            isp: d.organization_name,
+            asn: d.asn,
+            locationSource: 'ip'
+          };
+        }
+      ];
+
+      for (const src of sources) {
+        try {
+          const data = await src();
+          if (data && (data.city || data.country || data.ip)) return data;
+        } catch (e) { /* coba sumber berikutnya */ }
       }
+      return {
+        ip: null, city: null, region: null, country: null,
+        lat: null, lon: null, locationSource: 'ip'
+      };
     }
 
     // ========== Core ==========
@@ -806,12 +870,29 @@
       } else {
         [...link.visits].sort((a, b) => b.timestamp - a.timestamp).forEach(v => {
           const info = getDeviceInfo(v.userAgent);
+
+          // Format lokasi lebih detail
+          let locationText = '—';
+          if (v.city || v.region || v.country) {
+            locationText = [v.city, v.region, v.country].filter(Boolean).join(', ');
+          }
+          if (v.postal) locationText += ` (${v.postal})`;
+
+          // Koordinat
+          let coordText = '';
+          if (v.lat != null && v.lon != null) {
+            coordText = `${Number(v.lat).toFixed(5)}, ${Number(v.lon).toFixed(5)}`;
+          }
+
           const el = document.createElement('div');
           el.className = 'visit-item';
           el.innerHTML = `
             <div class="visit-time">${formatDate(v.timestamp)}</div>
             <div class="visit-details">
-              <span>📍 ${v.city || '—'}, ${v.country || '—'}</span>
+              <span>📍 ${locationText}</span>
+              ${coordText ? `<span>🗺️ ${coordText}</span>` : ''}
+              ${v.isp ? `<span>🏢 ${v.isp}</span>` : ''}
+              ${v.timezone ? `<span>🕒 ${v.timezone}</span>` : ''}
               <span>📱 ${info.device} · ${info.os}</span>
               <span>🌐 ${info.browser}</span>
               <span>🔗 ${v.referrer || 'Direct'}</span>
@@ -847,6 +928,7 @@
       }
 
       const geo = await getGeoInfo();
+
       const visit = {
         timestamp: Date.now(),
         userAgent: navigator.userAgent,
@@ -863,7 +945,7 @@
 
       setTimeout(() => {
         window.location.replace(link.originalUrl);
-      }, 500);
+      }, 400);
     }
 
     // ========== Init ==========
@@ -912,6 +994,58 @@
 
         document.getElementById('modal-close').addEventListener('click', closeDetail);
         document.querySelector('.modal-backdrop').addEventListener('click', closeDetail);
+
+        // Export semua data ke file JSON
+        document.getElementById('btn-export').addEventListener('click', () => {
+          const data = loadData();
+          const links = Object.values(data.links || {});
+
+          if (links.length === 0) {
+            alert('Belum ada data untuk diexport.');
+            return;
+          }
+
+          // Format data lebih rapi untuk export
+          const exportData = {
+            exportedAt: new Date().toISOString(),
+            totalLinks: links.length,
+            totalClicks: links.reduce((sum, l) => sum + l.visits.length, 0),
+            links: links.map(link => ({
+              id: link.id,
+              name: link.name,
+              originalUrl: link.originalUrl,
+              trackingUrl: link.trackingUrl,
+              createdAt: new Date(link.createdAt).toISOString(),
+              totalVisits: link.visits.length,
+              visits: link.visits.map(v => ({
+                waktu: new Date(v.timestamp).toISOString(),
+                ip: v.ip || null,
+                kota: v.city || null,
+                wilayah: v.region || null,
+                negara: v.country || null,
+                kodePos: v.postal || null,
+                latitude: v.lat || null,
+                longitude: v.lon || null,
+                isp: v.isp || null,
+                timezone: v.timezone || null,
+                perangkat: getDeviceInfo(v.userAgent).device,
+                os: getDeviceInfo(v.userAgent).os,
+                browser: getDeviceInfo(v.userAgent).browser,
+                referrer: v.referrer || 'Direct',
+                userAgent: v.userAgent || null,
+                fingerprint: v.fingerprint || null
+              }))
+            }))
+          };
+
+          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `linktracker-data-${new Date().toISOString().slice(0,10)}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
 
         document.getElementById('btn-clear').addEventListener('click', () => {
           if (confirm('Hapus SEMUA data link tracking? Tindakan ini tidak bisa dibatalkan.')) {
