@@ -201,7 +201,9 @@
       </header>
 
       <div class="notice" id="host-notice" style="display:none">
-        ⚠️ Agar tracking multi-user & lokasi bekerja penuh, host file ini (Netlify Drop / GitHub Pages) atau jalankan: <code style="background:#222;padding:2px 6px;border-radius:4px">python -m http.server 8080</code>
+        ⚠️ File dibuka secara lokal (file://). Tracking multi-user TIDAK akan bekerja.<br>
+        <b>Cara cepat:</b> buka terminal di folder ini → ketik <code style="background:#222;padding:2px 6px;border-radius:4px">python -m http.server 8080</code> → buka <code style="background:#222;padding:2px 6px;border-radius:4px">http://localhost:8080</code><br>
+        Atau drag file ke <b>https://app.netlify.com/drop</b> (gratis, 10 detik).
       </div>
 
       <section class="card">
@@ -350,15 +352,19 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!r.ok) throw new Error('remote create failed');
+    if (!r.ok) throw new Error('Gagal buat storage online (' + r.status + ')');
     const j = await r.json();
+    if (!j.id) throw new Error('Storage online tidak mengembalikan ID');
     return j.id;
   }
 
   async function remoteGet(id) {
     const r = await fetch(API + '/' + id);
-    if (!r.ok) throw new Error('remote get failed');
-    return await r.json();
+    if (!r.ok) throw new Error('Gagal ambil data online (' + r.status + ')');
+    const j = await r.json();
+    // API kadang return data langsung, kadang dibungkus {data: ...}
+    if (j && j.data && typeof j.data === 'object' && !Array.isArray(j.data)) return j.data;
+    return j;
   }
 
   async function remotePut(id, data) {
@@ -367,8 +373,10 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!r.ok) throw new Error('remote put failed');
-    return await r.json();
+    if (!r.ok) throw new Error('Gagal update data online (' + r.status + ')');
+    const j = await r.json();
+    if (j && j.data && typeof j.data === 'object' && !Array.isArray(j.data)) return j.data;
+    return j;
   }
 
   async function getGeo() {
@@ -407,12 +415,20 @@
     const displayName = name || url.replace(/^https?:\/\//, '').slice(0, 40);
     const record = { id, name: displayName, originalUrl: url, createdAt: Date.now(), visits: [] };
 
+    // WAJIB online agar semua user yang klik bisa dilacak di dashboard
     let binId = null;
     try {
       binId = await remoteCreate(record);
     } catch (e) {
-      console.warn('Remote gagal, mode lokal:', e);
+      console.error(e);
+      // Jika file:// biasanya gagal karena CORS — beritahu user
+      if (location.protocol === 'file:') {
+        throw new Error('Buka via http:// (bukan double-click file). Jalankan: python -m http.server 8080  ATAU upload ke Netlify Drop.');
+      }
+      throw new Error('Gagal koneksi storage online. Cek internet lalu coba lagi. Detail: ' + (e.message || e));
     }
+
+    if (!binId) throw new Error('Gagal membuat link online');
 
     const payload = enc({ i: id, u: url, n: displayName, b: binId });
     const trackingUrl = baseUrl() + '#/r/' + payload;
@@ -429,7 +445,10 @@
     const name = payload.n || '';
     const binId = payload.b || null;
 
-    const geo = await getGeo();
+    // Ambil lokasi (tanpa izin user)
+    let geo = {};
+    try { geo = await getGeo(); } catch (e) { console.warn('Geo gagal', e); }
+
     const visit = {
       timestamp: Date.now(),
       userAgent: navigator.userAgent,
@@ -437,33 +456,52 @@
       referrer: document.referrer || null,
       fingerprint: fingerprint(),
       screen: screen.width + 'x' + screen.height,
-      ...geo
+      ip: geo.ip || null,
+      city: geo.city || null,
+      region: geo.region || null,
+      country: geo.country || null,
+      postal: geo.postal || null,
+      lat: geo.lat || null,
+      lon: geo.lon || null,
+      timezone: geo.timezone || null,
+      isp: geo.isp || null
     };
 
+    // Simpan ke storage ONLINE (ini yang membuat dashboard pembuat link bisa melihat)
     if (binId) {
       try {
         let remote = await remoteGet(binId);
+        if (!remote || typeof remote !== 'object') remote = { id: id, visits: [] };
         if (!Array.isArray(remote.visits)) remote.visits = [];
         remote.visits.push(visit);
+        // pastikan metadata tetap ada
+        if (!remote.id) remote.id = id;
+        if (!remote.originalUrl) remote.originalUrl = url;
+        if (!remote.name) remote.name = name;
         await remotePut(binId, remote);
       } catch (e) {
         console.warn('Remote track gagal:', e);
       }
     }
 
+    // Backup lokal (berguna jika pembuat & pengklik browser yang sama)
     try {
       const data = load();
       if (!data.links[id]) {
         data.links[id] = {
-          id, name, originalUrl: url, binId,
+          id: id,
+          name: name,
+          originalUrl: url,
+          binId: binId,
           trackingUrl: location.href.split('#')[0] + '#/r/' + enc(payload),
-          createdAt: Date.now(), visits: []
+          createdAt: Date.now(),
+          visits: []
         };
       }
       data.links[id].visits.push(visit);
       if (binId) data.links[id].binId = binId;
       save(data);
-    } catch {}
+    } catch (e) {}
 
     return url;
   }
