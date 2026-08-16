@@ -257,10 +257,36 @@
   }
 
   function load() {
-    try { return JSON.parse(localStorage.getItem(STORAGE)) || { links: {} }; }
-    catch { return { links: {} }; }
+    try {
+      // Migrasi data versi lama agar history tidak hilang setelah update file
+      let raw = localStorage.getItem(STORAGE);
+      if (!raw) {
+        for (const k of ['lt_v2', 'lt_v1', 'linktracker_data_v1']) {
+          const old = localStorage.getItem(k);
+          if (old) {
+            raw = old;
+            localStorage.setItem(STORAGE, old);
+            break;
+          }
+        }
+      }
+      const data = raw ? JSON.parse(raw) : { links: {} };
+      if (!data.links) data.links = {};
+      return data;
+    } catch {
+      return { links: {} };
+    }
   }
-  function save(d) { localStorage.setItem(STORAGE, JSON.stringify(d)); }
+  function save(d) {
+    try {
+      d.updatedAt = Date.now();
+      localStorage.setItem(STORAGE, JSON.stringify(d));
+      // Backup kedua agar lebih aman
+      localStorage.setItem(STORAGE + '_backup', JSON.stringify(d));
+    } catch (e) {
+      console.warn('Gagal simpan localStorage', e);
+    }
+  }
 
   function getKey() { return localStorage.getItem(KEY_STORAGE) || ''; }
   function setKey(k) { localStorage.setItem(KEY_STORAGE, k.trim()); }
@@ -275,15 +301,92 @@
     const a = new Date(ts), b = new Date();
     return a.getDate()===b.getDate() && a.getMonth()===b.getMonth() && a.getFullYear()===b.getFullYear();
   }
+  function parseUA(ua) {
+    if (!ua) return { device:'?', browser:'?', browserVer:'', os:'?', osVer:'', model:'', engine:'' };
+    const isMobile = /Mobile|Android|iPhone|iPad|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const isTablet = /iPad|Tablet|Nexus 7|Nexus 9|KFAPWI/i.test(ua);
+    let device = isTablet ? 'Tablet' : (isMobile ? 'Mobile' : 'Desktop');
+
+    let browser = 'Lainnya', browserVer = '';
+    let m;
+    if ((m = ua.match(/Edg(?:e|A|iOS)?\/([\d.]+)/))) { browser = 'Edge'; browserVer = m[1]; }
+    else if ((m = ua.match(/OPR\/([\d.]+)/)) || (m = ua.match(/Opera\/([\d.]+)/))) { browser = 'Opera'; browserVer = m[1]; }
+    else if ((m = ua.match(/Chrome\/([\d.]+)/)) && !/Edg|OPR/.test(ua)) { browser = 'Chrome'; browserVer = m[1]; }
+    else if ((m = ua.match(/Firefox\/([\d.]+)/))) { browser = 'Firefox'; browserVer = m[1]; }
+    else if ((m = ua.match(/Version\/([\d.]+).*Safari/))) { browser = 'Safari'; browserVer = m[1]; }
+    else if ((m = ua.match(/Safari\/([\d.]+)/))) { browser = 'Safari'; browserVer = m[1]; }
+    else if ((m = ua.match(/SamsungBrowser\/([\d.]+)/))) { browser = 'Samsung Internet'; browserVer = m[1]; }
+
+    let os = 'Lainnya', osVer = '';
+    if ((m = ua.match(/Android ([\d.]+)/))) { os = 'Android'; osVer = m[1]; }
+    else if ((m = ua.match(/iPhone OS ([\d_]+)/)) || (m = ua.match(/CPU OS ([\d_]+)/))) { os = 'iOS'; osVer = m[1].replace(/_/g,'.'); }
+    else if ((m = ua.match(/Windows NT ([\d.]+)/))) {
+      os = 'Windows';
+      const map = {'10.0':'10/11','6.3':'8.1','6.2':'8','6.1':'7'};
+      osVer = map[m[1]] || m[1];
+    }
+    else if (/Mac OS X/.test(ua)) {
+      os = 'macOS';
+      m = ua.match(/Mac OS X ([\d_]+)/);
+      if (m) osVer = m[1].replace(/_/g,'.');
+    }
+    else if (/Linux/.test(ua) && !/Android/.test(ua)) { os = 'Linux'; }
+
+    // Model kasar (sering ada di Android)
+    let model = '';
+    if (/Android/.test(ua)) {
+      m = ua.match(/Android [\d.]+;[^;)]*;\s*([^;)]+)\s*Build/i)
+        || ua.match(/Android [\d.]+;\s*([^;)]+)\s*\)/i);
+      if (m) {
+        model = m[1].trim();
+        // buang kata generik
+        if (/^wv$|^Mobile$|^U$/i.test(model)) model = '';
+      }
+    } else if (/iPhone/.test(ua)) model = 'iPhone';
+    else if (/iPad/.test(ua)) model = 'iPad';
+
+    let engine = '';
+    if (/AppleWebKit/.test(ua)) engine = 'WebKit';
+    else if (/Gecko\//.test(ua) && !/like Gecko/.test(ua)) engine = 'Gecko';
+    else if (/Blink/.test(ua) || (/Chrome\//.test(ua) && /AppleWebKit/.test(ua))) engine = 'Blink';
+
+    return { device, browser, browserVer, os, osVer, model, engine };
+  }
   function deviceInfo(ua) {
-    if (!ua) return { device:'?', browser:'?', os:'?' };
-    let device = /Mobile|Android|iPhone|iPad/i.test(ua) ? 'Mobile' : 'Desktop';
-    let browser = ua.includes('Firefox')?'Firefox':ua.includes('Edg')?'Edge':ua.includes('Chrome')?'Chrome':ua.includes('Safari')?'Safari':'Lainnya';
-    let os = ua.includes('Windows')?'Windows':ua.includes('Mac OS')?'macOS':ua.includes('Android')?'Android':/iPhone|iPad/.test(ua)?'iOS':ua.includes('Linux')?'Linux':'Lainnya';
-    return { device, browser, os };
+    const p = parseUA(ua);
+    return { device: p.device, browser: p.browser + (p.browserVer ? ' ' + p.browserVer.split('.')[0] : ''), os: p.os + (p.osVer ? ' ' + p.osVer : '') };
+  }
+  function collectClientInfo() {
+    const nav = navigator;
+    const scr = screen;
+    const conn = nav.connection || nav.mozConnection || nav.webkitConnection || null;
+    const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch { return null; } })();
+    return {
+      platform: nav.platform || null,
+      languages: (nav.languages && nav.languages.length) ? nav.languages.slice(0,5).join(', ') : (nav.language || null),
+      language: nav.language || null,
+      hardwareConcurrency: nav.hardwareConcurrency || null,
+      deviceMemory: nav.deviceMemory || null,
+      maxTouchPoints: nav.maxTouchPoints || 0,
+      cookieEnabled: !!nav.cookieEnabled,
+      doNotTrack: nav.doNotTrack || nav.msDoNotTrack || null,
+      pdfViewer: !!nav.pdfViewerEnabled,
+      screen: scr.width + 'x' + scr.height,
+      availScreen: scr.availWidth + 'x' + scr.availHeight,
+      colorDepth: scr.colorDepth || null,
+      pixelRatio: window.devicePixelRatio || 1,
+      viewport: (window.innerWidth || 0) + 'x' + (window.innerHeight || 0),
+      timezoneLocal: tz,
+      timezoneOffset: new Date().getTimezoneOffset(),
+      connectionType: conn ? (conn.effectiveType || conn.type || null) : null,
+      connectionDownlink: conn && conn.downlink != null ? conn.downlink : null,
+      connectionRtt: conn && conn.rtt != null ? conn.rtt : null,
+      localTime: new Date().toISOString()
+    };
   }
   function fingerprint() {
-    const s = [navigator.userAgent, navigator.language, screen.width, screen.height, screen.colorDepth, new Date().getTimezoneOffset()].join('|');
+    const c = collectClientInfo();
+    const s = [navigator.userAgent, c.language, c.screen, c.colorDepth, c.pixelRatio, c.timezoneOffset, c.platform, c.hardwareConcurrency].join('|');
     let h = 0;
     for (let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; }
     return 'fp_'+Math.abs(h).toString(36);
@@ -345,26 +448,87 @@
         const r = await fetch('https://ipapi.co/json/');
         if (!r.ok) throw 0;
         const d = await r.json();
-        return { ip:d.ip, city:d.city, region:d.region, country:d.country_name||d.country, postal:d.postal, lat:d.latitude, lon:d.longitude, timezone:d.timezone, isp:d.org };
+        return {
+          ip: d.ip,
+          city: d.city,
+          region: d.region,
+          regionCode: d.region_code || null,
+          country: d.country_name || d.country,
+          countryCode: d.country_code || null,
+          postal: d.postal || null,
+          lat: d.latitude,
+          lon: d.longitude,
+          timezone: d.timezone,
+          isp: d.org || d.asn || null,
+          asn: d.asn || null,
+          network: d.network || null
+        };
       },
       async () => {
-        const r = await fetch('https://ip-api.com/json/?fields=status,country,regionName,city,zip,lat,lon,timezone,isp,org,query');
+        const r = await fetch('https://ip-api.com/json/?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query');
         if (!r.ok) throw 0;
         const d = await r.json();
-        if (d.status==='fail') throw 0;
-        return { ip:d.query, city:d.city, region:d.regionName, country:d.country, postal:d.zip, lat:d.lat, lon:d.lon, timezone:d.timezone, isp:d.isp||d.org };
+        if (d.status === 'fail') throw 0;
+        return {
+          ip: d.query,
+          city: d.city,
+          region: d.regionName,
+          regionCode: d.region || null,
+          country: d.country,
+          countryCode: d.countryCode || null,
+          postal: d.zip || null,
+          lat: d.lat,
+          lon: d.lon,
+          timezone: d.timezone,
+          isp: d.isp || d.org || null,
+          asn: d.as || null,
+          network: null
+        };
       },
       async () => {
         const r = await fetch('https://get.geojs.io/v1/ip/geo.json');
         if (!r.ok) throw 0;
         const d = await r.json();
-        return { ip:d.ip, city:d.city, region:d.region, country:d.country, lat:+d.latitude, lon:+d.longitude, timezone:d.timezone, isp:d.organization_name };
+        return {
+          ip: d.ip,
+          city: d.city,
+          region: d.region,
+          regionCode: null,
+          country: d.country,
+          countryCode: d.country_code || null,
+          postal: null,
+          lat: +d.latitude,
+          lon: +d.longitude,
+          timezone: d.timezone,
+          isp: d.organization_name || null,
+          asn: d.asn || null,
+          network: null
+        };
       }
     ];
     for (const fn of sources) {
-      try { const g = await fn(); if (g && (g.city||g.country||g.ip)) return g; } catch {}
+      try {
+        const g = await fn();
+        if (g && (g.city || g.country || g.ip)) return g;
+      } catch {}
     }
     return {};
+  }
+
+  function formatLocation(v) {
+    const parts = [];
+    if (v.city) parts.push(v.city);
+    if (v.region && v.region !== v.city) parts.push(v.region);
+    if (v.postal) parts.push('Kode pos ' + v.postal);
+    if (v.country) {
+      parts.push(v.countryCode ? (v.country + ' (' + v.countryCode + ')') : v.country);
+    }
+    return parts.length ? parts.join(', ') : 'Lokasi tidak terdeteksi';
+  }
+
+  function mapsUrl(v) {
+    if (v.lat == null || v.lon == null) return null;
+    return 'https://www.google.com/maps?q=' + encodeURIComponent(v.lat + ',' + v.lon);
   }
 
   async function createLink(url, name) {
@@ -398,17 +562,54 @@
     let geo = {};
     try { geo = await getGeo(); } catch {}
 
+    const client = collectClientInfo();
+    const uaInfo = parseUA(navigator.userAgent);
     const visit = {
       timestamp: Date.now(),
       userAgent: navigator.userAgent,
-      language: navigator.language,
       referrer: document.referrer || null,
       fingerprint: fingerprint(),
-      screen: screen.width + 'x' + screen.height,
-      ip: geo.ip||null, city: geo.city||null, region: geo.region||null,
-      country: geo.country||null, postal: geo.postal||null,
-      lat: geo.lat||null, lon: geo.lon||null,
-      timezone: geo.timezone||null, isp: geo.isp||null
+      // lokasi IP
+      ip: geo.ip||null,
+      city: geo.city||null,
+      region: geo.region||null,
+      regionCode: geo.regionCode||null,
+      country: geo.country||null,
+      countryCode: geo.countryCode||null,
+      postal: geo.postal||null,
+      lat: geo.lat||null,
+      lon: geo.lon||null,
+      timezone: geo.timezone||null,
+      isp: geo.isp||null,
+      asn: geo.asn||null,
+      network: geo.network||null,
+      // perangkat dari UA
+      device: uaInfo.device,
+      os: uaInfo.os,
+      osVer: uaInfo.osVer,
+      browser: uaInfo.browser,
+      browserVer: uaInfo.browserVer,
+      model: uaInfo.model,
+      engine: uaInfo.engine,
+      // info klien tambahan
+      platform: client.platform,
+      language: client.language,
+      languages: client.languages,
+      screen: client.screen,
+      availScreen: client.availScreen,
+      viewport: client.viewport,
+      colorDepth: client.colorDepth,
+      pixelRatio: client.pixelRatio,
+      hardwareConcurrency: client.hardwareConcurrency,
+      deviceMemory: client.deviceMemory,
+      maxTouchPoints: client.maxTouchPoints,
+      cookieEnabled: client.cookieEnabled,
+      doNotTrack: client.doNotTrack,
+      timezoneLocal: client.timezoneLocal,
+      timezoneOffset: client.timezoneOffset,
+      connectionType: client.connectionType,
+      connectionDownlink: client.connectionDownlink,
+      connectionRtt: client.connectionRtt
     };
 
     if (binId && keyFromLink) {
@@ -448,21 +649,53 @@
     return url;
   }
 
+  function mergeVisits(localArr, remoteArr) {
+    const map = new Map();
+    const add = (v) => {
+      if (!v || !v.timestamp) return;
+      // key unik: timestamp + fingerprint/ip
+      const key = String(v.timestamp) + '|' + (v.fingerprint || '') + '|' + (v.ip || '');
+      if (!map.has(key)) map.set(key, v);
+    };
+    (localArr || []).forEach(add);
+    (remoteArr || []).forEach(add);
+    return Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
+  }
+
   async function syncAll() {
-    if (!getKey()) return;
+    if (!getKey()) return false;
     const data = load();
     let changed = false;
     await Promise.all(Object.values(data.links).map(async (link) => {
       if (!link.binId) return;
       try {
         const remote = await remoteGet(link.binId);
-        if (remote && Array.isArray(remote.visits) && remote.visits.length !== (link.visits||[]).length) {
-          data.links[link.id].visits = remote.visits;
+        if (!remote) return;
+        const merged = mergeVisits(link.visits || [], remote.visits || []);
+        const before = (link.visits || []).length;
+        if (merged.length !== before) {
+          data.links[link.id].visits = merged;
+          changed = true;
+        } else {
+          // tetap update jika isi berbeda meski jumlah sama
+          const localSig = JSON.stringify(link.visits || []);
+          const mergedSig = JSON.stringify(merged);
+          if (localSig !== mergedSig) {
+            data.links[link.id].visits = merged;
+            changed = true;
+          }
+        }
+        // sync metadata nama/url jika perlu
+        if (remote.name && !data.links[link.id].name) {
+          data.links[link.id].name = remote.name;
           changed = true;
         }
-      } catch {}
+      } catch (e) {
+        console.warn('Sync gagal untuk', link.id, e);
+      }
     }));
     if (changed) save(data);
+    return changed;
   }
 
   function stats() {
@@ -543,14 +776,35 @@
     if (!visits.length) box.innerHTML = '<div class="empty">Belum ada kunjungan.</div>';
     else {
       box.innerHTML = [...visits].sort((a,b)=>b.timestamp-a.timestamp).map(v => {
-        const di = deviceInfo(v.userAgent);
-        const loc = [v.city,v.region,v.country].filter(Boolean).join(', ')||'—';
-        const coord = (v.lat!=null&&v.lon!=null)?(Number(v.lat).toFixed(4)+', '+Number(v.lon).toFixed(4)):'';
+        const di = v.device ? null : deviceInfo(v.userAgent);
+        const device = v.device || (di && di.device) || '?';
+        const os = (v.os || (di && di.os) || '?') + (v.osVer ? ' ' + v.osVer : '');
+        const browser = (v.browser || (di && di.browser) || '?') + (v.browserVer ? ' ' + String(v.browserVer).split('.')[0] : '');
+        const loc = formatLocation(v);
+        const coord = (v.lat!=null&&v.lon!=null)?(Number(v.lat).toFixed(5)+', '+Number(v.lon).toFixed(5)):'';
+        const map = mapsUrl(v);
         return '<div class="visit"><div class="visit-time">'+fmt(v.timestamp)+'</div><div class="visit-det">'+
-          '<span>📍 '+esc(loc)+'</span>'+(coord?'<span>🗺️ '+coord+'</span>':'')+
-          (v.isp?'<span>🏢 '+esc(v.isp)+'</span>':'')+(v.timezone?'<span>🕒 '+esc(v.timezone)+'</span>':'')+
-          '<span>📱 '+di.device+' · '+di.os+'</span><span>🌐 '+di.browser+'</span>'+
-          '<span>🔗 '+esc(v.referrer||'Direct')+'</span>'+(v.ip?'<span>IP: '+esc(v.ip)+'</span>':'')+
+          '<span><b>📍 Lokasi:</b> '+esc(loc)+'</span>'+
+          (coord?'<span><b>🗺️ Koordinat:</b> '+coord+(map?' · <a href="'+map+'" target="_blank" rel="noopener" style="color:#818cf8">Buka di Maps</a>':'')+'</span>':'')+
+          (v.ip?'<span><b>IP:</b> '+esc(v.ip)+'</span>':'')+
+          (v.isp?'<span><b>🏢 ISP:</b> '+esc(v.isp)+'</span>':'')+
+          (v.asn?'<span><b>ASN:</b> '+esc(v.asn)+'</span>':'')+
+          (v.timezone?'<span><b>🕒 Timezone IP:</b> '+esc(v.timezone)+'</span>':'')+
+          (v.timezoneLocal?'<span><b>🕒 Timezone device:</b> '+esc(v.timezoneLocal)+'</span>':'')+
+          '<span>📱 '+esc(device)+(v.model?' · '+esc(v.model):'')+'</span>'+
+          '<span>💻 '+esc(os)+'</span>'+
+          '<span>🌐 '+esc(browser)+'</span>'+
+          (v.engine?'<span>⚙️ '+esc(v.engine)+'</span>':'')+
+          (v.screen?'<span>🖥 Layar '+esc(v.screen)+(v.pixelRatio?' @'+v.pixelRatio+'x':'')+'</span>':'')+
+          (v.viewport?'<span>📐 Viewport '+esc(v.viewport)+'</span>':'')+
+          (v.hardwareConcurrency?'<span>🧠 '+v.hardwareConcurrency+' core</span>':'')+
+          (v.deviceMemory?'<span>💾 RAM ~'+v.deviceMemory+'GB</span>':'')+
+          (v.connectionType?'<span>📶 '+esc(v.connectionType)+(v.connectionDownlink?' · '+v.connectionDownlink+'Mbps':'')+'</span>':'')+
+          (v.languages?'<span>🗣 '+esc(v.languages)+'</span>':'')+
+          (v.platform?'<span>📦 '+esc(v.platform)+'</span>':'')+
+          (v.maxTouchPoints?'<span>👆 Touch '+v.maxTouchPoints+'</span>':'')+
+          '<span>🔗 '+esc(v.referrer||'Direct')+'</span>'+
+          (v.fingerprint?'<span>🪪 '+esc(v.fingerprint)+'</span>':'')+
           '</div></div>';
       }).join('');
     }
@@ -558,7 +812,12 @@
   }
 
   async function refresh() {
-    await syncAll();
+    try {
+      await syncAll();
+    } catch (e) {
+      console.warn('refresh sync error', e);
+    }
+    // History lokal tetap ditampilkan meski sync gagal
     stats();
     renderList();
   }
@@ -649,8 +908,26 @@
       localStorage.removeItem(STORAGE); refresh(); $('#result').classList.remove('show');
     });
 
+    // Muat history dari localStorage (tidak terhapus saat refresh/keluar)
+    // lalu sync real-time dari server
     refresh();
-    setInterval(refresh, 5000);
+
+    // Real-time: sync tiap 4 detik
+    setInterval(refresh, 4000);
+
+    // Saat user kembali ke tab/halaman → langsung sync
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') refresh();
+    });
+    window.addEventListener('focus', function () { refresh(); });
+
+    // Jangan hapus data saat keluar halaman
+    window.addEventListener('beforeunload', function () {
+      try {
+        const d = load();
+        save(d); // pastikan tersimpan
+      } catch (e) {}
+    });
   }
 
   init();
